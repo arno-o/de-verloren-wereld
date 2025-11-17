@@ -24,9 +24,6 @@ export default class Game2Scene {
           <!-- Your game 2 content here -->
           <p>Game 2 is running...</p>
         </div>
-        <div class="player-scores">
-          <!-- Player scores will be displayed here -->
-        </div>
         <div class="pause-overlay hidden">
           <p>Wachten op speler...</p>
         </div>
@@ -46,35 +43,18 @@ export default class Game2Scene {
     gameEvents.on(Events.GAME_PAUSE, this.pauseListener);
     gameEvents.on(Events.GAME_RESUME, this.resumeListener);
     
-    // Update player display
-    this.updatePlayerDisplay();
-    
     // Start game logic
     this.startGameLogic();
   }
 
-  updatePlayerDisplay() {
-    const scoresContainer = this.container.querySelector('.player-scores');
-    const players = this.playerManager.getActivePlayers();
-    
-    scoresContainer.innerHTML = players.map(player => `
-      <div class="player-score" data-player="${player.id}">
-        <span class="player-name">Speler ${player.id}</span>
-        <span class="score">${player.score}</span>
-      </div>
-    `).join('');
-  }
-
   startGameLogic() {
-    // Example: Auto-complete after 15 seconds
-    // Replace with your actual game 2 logic
     this.gameTimer = setTimeout(() => {
       if (!this.isPaused) {
         this.onGameComplete();
       }
     }, 15000);
     
-    // TODO: Implement your actual game logic here
+    // TODO: Implement actual game logic here
   }
 
   handlePause() {
@@ -83,7 +63,7 @@ export default class Game2Scene {
     const overlay = this.container.querySelector('.pause-overlay');
     overlay.classList.remove('hidden');
     
-    // Pause your game logic here
+    // Pause game logic here
   }
 
   handleResume() {
@@ -92,19 +72,12 @@ export default class Game2Scene {
     const overlay = this.container.querySelector('.pause-overlay');
     overlay.classList.add('hidden');
     
-    // Resume your game logic here
+    // Resume game logic here
   }
 
   onGameComplete() {
     console.log('[Game2Scene] Game 2 completed');
     if (this.isActive && !this.isPaused) {
-      // Example: Award points based on performance
-      const players = this.playerManager.getActivePlayers();
-      players.forEach(player => {
-        const points = Math.floor(Math.random() * 100); // Replace with actual scoring
-        this.playerManager.updatePlayerScore(player.id, points);
-      });
-      
       gameEvents.emit(Events.SCENE_COMPLETE, { scene: 'game2' });
     }
   }
@@ -113,7 +86,7 @@ export default class Game2Scene {
     // Called each frame if needed
     if (!this.isActive || this.isPaused) return;
     
-    // Implement your game loop here
+    // Implement game loop here
   }
 
   cleanup() {

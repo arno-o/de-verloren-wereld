@@ -7,6 +7,8 @@ export default class PlayerManager {
     this.keyStates = new Map();
     this.keyTimers = new Map();
     this.isListening = false;
+    this.initialPlayers = new Set(); // Players who started the game
+    this.gameStarted = false; // Track if game has started
     
     // Initialize player slots
     this.initializePlayers();
@@ -20,7 +22,6 @@ export default class PlayerManager {
         key: key,
         isActive: false,
         isOnPlate: false,
-        score: 0,
         joinedAt: null
       });
       this.keyStates.set(key, false);
@@ -102,11 +103,18 @@ export default class PlayerManager {
     player.isOnPlate = true;
     
     if (!wasActive) {
-      player.isActive = true;
-      player.joinedAt = Date.now();
-      console.log(`[PlayerManager] Player ${playerId} joined the game`);
-      gameEvents.emit(Events.PLAYER_JOIN, { playerId, player });
+      // If game hasn't started, allow them to join
+      if (!this.gameStarted) {
+        player.isActive = true;
+        player.joinedAt = Date.now();
+        console.log(`[PlayerManager] Player ${playerId} joined the game`);
+        gameEvents.emit(Events.PLAYER_JOIN, { playerId, player });
+      } else {
+        // Game already started - they can't join
+        console.log(`[PlayerManager] Player ${playerId} tried to join but game already started`);
+      }
     } else {
+      // Player returning to plate
       console.log(`[PlayerManager] Player ${playerId} back on plate`);
       gameEvents.emit(Events.PLAYER_ACTIVE, { playerId, player });
     }
@@ -154,6 +162,29 @@ export default class PlayerManager {
     return this.getActivePlayers().length;
   }
 
+  getInitialPlayers() {
+    return Array.from(this.initialPlayers).map(id => this.players.get(id)).filter(p => p);
+  }
+
+  getInitialPlayerCount() {
+    return this.initialPlayers.size;
+  }
+
+  lockInPlayers() {
+    // Lock in the current active players as the initial game players
+    this.gameStarted = true;
+    this.initialPlayers.clear();
+    const activePlayers = this.getActivePlayers();
+    activePlayers.forEach(player => {
+      this.initialPlayers.add(player.id);
+    });
+    console.log(`[PlayerManager] Locked in initial players:`, Array.from(this.initialPlayers));
+  }
+
+  isInitialPlayer(playerId) {
+    return this.initialPlayers.has(playerId);
+  }
+
   getPlayersOnPlate() {
     return Array.from(this.players.values()).filter(p => p.isActive && p.isOnPlate);
   }
@@ -164,40 +195,19 @@ export default class PlayerManager {
     return activePlayers.every(p => p.isOnPlate);
   }
 
-  updatePlayerScore(playerId, points) {
-    const player = this.players.get(playerId);
-    if (player) {
-      player.score += points;
-      console.log(`[PlayerManager] Player ${playerId} score: ${player.score} (+${points})`);
-    }
-  }
-
-  getPlayerScore(playerId) {
-    return this.players.get(playerId)?.score || 0;
-  }
-
-  getTotalScore() {
-    return this.getActivePlayers().reduce((sum, p) => sum + p.score, 0);
-  }
-
-  resetScores() {
-    this.players.forEach(player => {
-      player.score = 0;
-    });
-  }
-
   reset() {
     console.log('[PlayerManager] Resetting all players');
     this.players.forEach(player => {
       player.isActive = false;
       player.isOnPlate = false;
-      player.score = 0;
       player.joinedAt = null;
     });
     
     this.keyStates.clear();
     this.keyTimers.forEach(timer => clearTimeout(timer));
     this.keyTimers.clear();
+    this.initialPlayers.clear();
+    this.gameStarted = false;
   }
 
   getPlayer(playerId) {

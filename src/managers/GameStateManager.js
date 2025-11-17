@@ -9,7 +9,7 @@ export default class GameStateManager {
     this.sceneManager = new SceneManager();
     this.playerManager = new PlayerManager();
     this.timers = new Map();
-    this.missingPlayers = new Set();
+    this.missingPlayers = new Map(); // playerId -> timer info
   }
 
   init() {
@@ -69,6 +69,8 @@ export default class GameStateManager {
 
   startIntro() {
     console.log('[GameStateManager] Starting intro...');
+    // Lock in the players who are starting the game
+    this.playerManager.lockInPlayers();
     this.setState(GameStates.INTRO);
     this.sceneManager.switchScene('intro');
   }
@@ -92,10 +94,10 @@ export default class GameStateManager {
     this.sceneManager.switchScene('game2');
   }
 
-  startOutro(results) {
+  startOutro() {
     console.log('[GameStateManager] Starting outro...');
     this.setState(GameStates.OUTRO);
-    this.sceneManager.switchScene('outro', { results });
+    this.sceneManager.switchScene('outro');
   }
 
   onSceneComplete(sceneName, data = {}) {
@@ -124,11 +126,7 @@ export default class GameStateManager {
         
       case 'player-check-2':
         if (data.playersRemaining > 1) {
-          const results = {
-            totalScore: this.playerManager.getTotalScore(),
-            players: this.playerManager.getActivePlayers()
-          };
-          this.startOutro(results);
+          this.startOutro();
         } else {
           this.resetToIdle();
         }
@@ -147,28 +145,45 @@ export default class GameStateManager {
   }
 
   handlePlayerLeave(playerId) {
-    console.log(`[GameStateManager] Player ${playerId} left during game`);
-    this.missingPlayers.add(playerId);
+    // Only track leaves for initial players
+    if (!this.playerManager.isInitialPlayer(playerId)) {
+      console.log(`[GameStateManager] Player ${playerId} not an initial player, ignoring leave`);
+      return;
+    }
+    
+    console.log(`[GameStateManager] Initial player ${playerId} left during game`);
+    
+    // Already tracking this player's leave?
+    if (this.missingPlayers.has(playerId)) {
+      return;
+    }
+    
+    this.missingPlayers.set(playerId, { timestamp: Date.now() });
     
     // Pause game and wait 5 seconds
     gameEvents.emit(Events.GAME_PAUSE, { playerId });
     
-    this.timers.set(`player-${playerId}-check`, setTimeout(() => {
+    const timer = setTimeout(() => {
       const player = this.playerManager.getPlayer(playerId);
       if (!player.isOnPlate) {
-        console.log(`[GameStateManager] Player ${playerId} didn't return, continuing without them`);
+        console.log(`[GameStateManager] Player ${playerId} didn't return, removing them`);
         this.playerManager.removePlayer(playerId);
         this.missingPlayers.delete(playerId);
         
-        // Check if any players left
-        if (this.playerManager.getActivePlayerCount() === 0) {
-          console.log('[GameStateManager] No players remaining, resetting to idle');
+        // Count remaining initial players who are still active
+        const remainingInitialPlayers = this.playerManager.getInitialPlayers().filter(p => p.isActive);
+        
+        if (remainingInitialPlayers.length === 0) {
+          console.log('[GameStateManager] All initial players gone, resetting to idle');
           this.resetToIdle();
         } else {
+          console.log(`[GameStateManager] ${remainingInitialPlayers.length} initial player(s) remaining, resuming game`);
           gameEvents.emit(Events.GAME_RESUME);
         }
       }
-    }, SceneConfig.PLAYER_CHECK_PAUSE));
+    }, SceneConfig.PLAYER_LEAVE_WAIT);
+    
+    this.timers.set(`player-${playerId}-leave`, timer);
   }
 
   handlePlayerReturn(playerId) {
@@ -177,13 +192,16 @@ export default class GameStateManager {
       this.missingPlayers.delete(playerId);
       
       // Clear their timeout
-      const timerKey = `player-${playerId}-check`;
+      const timerKey = `player-${playerId}-leave`;
       if (this.timers.has(timerKey)) {
         clearTimeout(this.timers.get(timerKey));
         this.timers.delete(timerKey);
       }
       
-      gameEvents.emit(Events.GAME_RESUME);
+      // Only resume if no other players are missing
+      if (this.missingPlayers.size === 0) {
+        gameEvents.emit(Events.GAME_RESUME);
+      }
     }
   }
 

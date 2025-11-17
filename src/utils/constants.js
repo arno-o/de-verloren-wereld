@@ -28,6 +28,8 @@ export const PlayerConfig = {
 // Scene configuration
 export const SceneConfig = {
   PLAYER_SELECT_WAIT: 15000, // 15s wait after players join before game starts
+  PLAYER_LEAVE_WAIT: 5000, // 5s wait for player to return before removing them
+  MIN_PLAYERS_GRACE_PERIOD: 10000, // 10s grace period when below min players during check
   PLAYER_CHECK_PAUSE: 5000, // 5s pause to check if player returns
   OUTRO_DURATION: 20000, // 20s outro before returning to idle
   TRANSITION_DURATION: 1000 // 1s fade transition

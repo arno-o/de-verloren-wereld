@@ -8,6 +8,8 @@ export default class PlayerCheckScene {
     this.isActive = false;
     this.checkNumber = 1;
     this.checkTimer = null;
+    this.gracePeriodTimer = null;
+    this.inGracePeriod = false;
   }
 
   init() {
@@ -65,13 +67,16 @@ export default class PlayerCheckScene {
   }
 
   updatePlayerStatus() {
+    // Only show initial players
+    const initialPlayerIds = Array.from(this.playerManager.initialPlayers);
     const players = this.playerManager.getActivePlayers();
     
     for (let i = 1; i <= 4; i++) {
       const slot = this.container.querySelector(`[data-player="${i}"]`);
+      const isInitialPlayer = initialPlayerIds.includes(i);
       const player = players.find(p => p.id === i);
       
-      if (!player) {
+      if (!isInitialPlayer || !player) {
         slot.classList.add('hidden');
       } else {
         slot.classList.remove('hidden');
@@ -97,8 +102,45 @@ export default class PlayerCheckScene {
     const checkPlayers = () => {
       if (!this.isActive) return;
       
-      if (this.playerManager.areAllActivePlayersOnPlate()) {
-        console.log('[PlayerCheckScene] All players ready!');
+      const initialPlayers = this.playerManager.getInitialPlayers().filter(p => p.isActive);
+      const initialPlayersCount = initialPlayers.length;
+      
+      // Check if we have minimum players
+      if (initialPlayersCount < 2) {
+        if (!this.inGracePeriod) {
+          console.log('[PlayerCheckScene] Below minimum players, starting grace period');
+          this.inGracePeriod = true;
+          this.updateMessage('Wachten op meer spelers...');
+          
+          this.gracePeriodTimer = setTimeout(() => {
+            // Still below minimum? Reset to idle
+            const stillBelowMin = this.playerManager.getInitialPlayers().filter(p => p.isActive).length < 2;
+            if (stillBelowMin) {
+              console.log('[PlayerCheckScene] Grace period expired, resetting to idle');
+              gameEvents.emit(Events.RESET_TO_IDLE);
+            }
+          }, 10000); // 10 second grace period
+        }
+        this.checkTimer = setTimeout(checkPlayers, checkInterval);
+        return;
+      }
+      
+      // We have enough players, cancel grace period if active
+      if (this.inGracePeriod) {
+        console.log('[PlayerCheckScene] Minimum players restored');
+        this.inGracePeriod = false;
+        if (this.gracePeriodTimer) {
+          clearTimeout(this.gracePeriodTimer);
+          this.gracePeriodTimer = null;
+        }
+        this.updateMessage('Ga op je veld staan om door te gaan...');
+      }
+      
+      // Check if all initial active players are on plate
+      const allOnPlate = initialPlayers.every(p => p.isOnPlate);
+      
+      if (allOnPlate) {
+        console.log('[PlayerCheckScene] All initial players ready!');
         // small delay before continuing
         setTimeout(() => {
           this.onCheckComplete();
@@ -109,6 +151,13 @@ export default class PlayerCheckScene {
     };
     
     checkPlayers();
+  }
+
+  updateMessage(text) {
+    const messageEl = this.container.querySelector('.check-message p');
+    if (messageEl) {
+      messageEl.textContent = text;
+    }
   }
 
   onCheckComplete() {
@@ -127,10 +176,16 @@ export default class PlayerCheckScene {
   cleanup() {
     console.log('[PlayerCheckScene] Cleaning up...');
     this.isActive = false;
+    this.inGracePeriod = false;
     
     if (this.checkTimer) {
       clearTimeout(this.checkTimer);
       this.checkTimer = null;
+    }
+    
+    if (this.gracePeriodTimer) {
+      clearTimeout(this.gracePeriodTimer);
+      this.gracePeriodTimer = null;
     }
     
     if (this.activeListener) {
