@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+  <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+  <title>De Verloren Wereld</title>
+  <link rel="stylesheet" href="./src/styles/main.css">
+</head>
+
+<body>
+  <div id="game-container">
+    <div id="scene-idle" class="scene"></div>
+    <div id="scene-player-select" class="scene hidden"></div>
+    <div id="scene-intro" class="scene hidden"></div>
+    <div id="scene-game1" class="scene hidden"></div>
+    <div id="scene-player-check" class="scene hidden"></div>
+    <div id="scene-game2" class="scene hidden"></div>
+    <div id="scene-outro" class="scene hidden"></div>
+  </div>
+</body>
+<script type="module" src="./renderer.js"></script>
+
+</html>
