@@ -1,13 +1,14 @@
 {
   "name": "de-verloren-wereld",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha",
   "description": "Een interactieve installatie voor het JEF evenement in Antwerpen, 2025. Gemaakt door Deviners",
   "main": "src/main.js",
   "scripts": {
     "start": "electron-forge start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "package": "electron-forge package",
-    "make": "electron-forge make"
+    "make": "electron-forge make",
+    "publish": "electron-forge publish"
   },
   "author": "Arno Oosterlynck, Devine HoWest",
   "license": "MIT",

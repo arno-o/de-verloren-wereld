@@ -2,8 +2,22 @@ const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
 module.exports = {
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'arno-o',
+          name: 'de-verloren-wereld'
+        },
+        prerelease: false,
+        draft: true
+      }
+    }
+  ],
   packagerConfig: {
     asar: true,
+    icon: 'assets/images/icons/app-icon',
   },
   rebuildConfig: {},
   makers: [
@@ -17,7 +31,11 @@ module.exports = {
     },
     {
       name: '@electron-forge/maker-deb',
-      config: {},
+      config: {
+        options: {
+          icon: 'assets/images/icons/app-icon.png'
+        }
+      },
     },
     {
       name: '@electron-forge/maker-rpm',

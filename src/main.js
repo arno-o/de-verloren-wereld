@@ -3,20 +3,20 @@ const path = require('node:path')
 
 const createWindow = () => {
   const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1400,
+    height: 800,
+    icon: path.join(__dirname, '../assets/images/icons/app-icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
     }
   })
-
+  
   win.setTitle('De Verloren Wereld');
   win.loadFile('index.html');
 }
 
 app.whenReady().then(() => {
   createWindow()
-  setFullScreen()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
