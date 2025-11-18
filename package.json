@@ -9,7 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "electron-forge publish"
+    "publish": "env-cmd electron-forge publish"
   },
   "author": "Arno Oosterlynck, Devine HoWest",
   "license": "MIT",
