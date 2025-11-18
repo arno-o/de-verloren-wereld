@@ -10,8 +10,7 @@ module.exports = {
           owner: 'arno-o',
           name: 'de-verloren-wereld'
         },
-        prerelease: false,
-        draft: true
+        prerelease: true
       }
     }
   ],

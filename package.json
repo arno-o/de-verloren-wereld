@@ -3,6 +3,7 @@
   "version": "0.0.1-alpha",
   "description": "Een interactieve installatie voor het JEF evenement in Antwerpen, 2025. Gemaakt door Deviners",
   "main": "src/main.js",
+  "productName": "De Verloren Wereld",
   "scripts": {
     "start": "electron-forge start",
     "test": "echo \"Error: no test specified\" && exit 1",
