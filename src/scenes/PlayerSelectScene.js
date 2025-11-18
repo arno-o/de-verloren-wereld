@@ -1,4 +1,4 @@
-import { SceneConfig, AvatarColors } from '../utils/constants.js';
+import { SceneConfig, AvatarColors, PlayerConfig } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class PlayerSelectScene {
@@ -8,6 +8,8 @@ export default class PlayerSelectScene {
     this.isActive = false;
     this.countdownTimer = null;
     this.playerJoinListener = null;
+    this.playerLeaveListener = null;
+    this.playerInactiveListener = null;
     this.remainingTime = 0;
   }
 
@@ -30,7 +32,8 @@ export default class PlayerSelectScene {
         </div>
         
         <div class="countdown">
-          <p>Het spel begint in <span id="countdown-timer">15</span> seconden...</p>
+          <p id="countdown-message">Het spel begint in <span id="countdown-timer">15</span> seconden...</p>
+          <p id="min-players-message" class="hidden">Minimaal ${PlayerConfig.MIN_PLAYERS} spelers nodig om te starten</p>
         </div>
       </div>
     `;
@@ -44,8 +47,14 @@ export default class PlayerSelectScene {
     
     this.updatePlayerDisplay();
     
-    this.playerJoinListener = (data) => this.updatePlayerDisplay();
+    this.playerJoinListener = () => this.updatePlayerDisplay();
     gameEvents.on(Events.PLAYER_JOIN, this.playerJoinListener);
+
+    this.playerLeaveListener = () => this.updatePlayerDisplay();
+    gameEvents.on(Events.PLAYER_LEAVE, this.playerLeaveListener);
+    
+    this.playerInactiveListener = () => this.updatePlayerDisplay();
+    gameEvents.on(Events.PLAYER_INACTIVE, this.playerInactiveListener);
     
     this.startCountdown();
   }
@@ -64,6 +73,27 @@ export default class PlayerSelectScene {
         slot.classList.remove('active');
         slot.style.backgroundColor = '';
       }
+    }
+    
+    this.checkMinimumPlayers();
+  }
+  
+  checkMinimumPlayers() {
+    const activeCount = this.playerManager.getActivePlayerCount();
+    const countdownMessage = this.container.querySelector('#countdown-message');
+    const minPlayersMessage = this.container.querySelector('#min-players-message');
+    const timerElement = this.container.querySelector('#countdown-timer');
+    
+    if (activeCount < PlayerConfig.MIN_PLAYERS) {
+      // below minimum - reset countdown and show message
+      this.remainingTime = SceneConfig.PLAYER_SELECT_WAIT / 1000;
+      if (timerElement) timerElement.textContent = this.remainingTime;
+      countdownMessage?.classList.add('hidden');
+      minPlayersMessage?.classList.remove('hidden');
+    } else {
+      // above minimum - start/continue countdown
+      countdownMessage?.classList.remove('hidden');
+      minPlayersMessage?.classList.add('hidden');
     }
   }
 
@@ -87,7 +117,18 @@ export default class PlayerSelectScene {
   }
 
   onCountdownComplete() {
-    console.log('[PlayerSelectScene] Countdown complete, starting game');
+    console.log('[PlayerSelectScene] Countdown complete');
+    
+    // check if we have minimum players
+    const activeCount = this.playerManager.getActivePlayerCount();
+    if (activeCount < PlayerConfig.MIN_PLAYERS) {
+      console.log(`[PlayerSelectScene] Not enough players (${activeCount}/${PlayerConfig.MIN_PLAYERS}), cannot start game`);
+      // reset countdown to idle
+      gameEvents.emit(Events.RESET_TO_IDLE);
+      return;
+    }
+    
+    console.log('[PlayerSelectScene] Starting game with', activeCount, 'players');
     gameEvents.emit(Events.PLAYERS_READY);
   }
 
@@ -103,6 +144,16 @@ export default class PlayerSelectScene {
     if (this.playerJoinListener) {
       gameEvents.off(Events.PLAYER_JOIN, this.playerJoinListener);
       this.playerJoinListener = null;
+    }
+    
+    if (this.playerLeaveListener) {
+      gameEvents.off(Events.PLAYER_LEAVE, this.playerLeaveListener);
+      this.playerLeaveListener = null;
+    }
+    
+    if (this.playerInactiveListener) {
+      gameEvents.off(Events.PLAYER_INACTIVE, this.playerInactiveListener);
+      this.playerInactiveListener = null;
     }
     
     this.container.classList.add('hidden');

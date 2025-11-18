@@ -40,10 +40,10 @@ export default class OutroScene {
     this.results = options.results || { totalScore: 0, players: [] };
     this.container.classList.remove('hidden');
     
-    // Display results
+    // display results
     this.displayResults();
     
-    // Play outro
+    // play outro
     this.playOutro();
   }
 
@@ -51,10 +51,10 @@ export default class OutroScene {
     const scoresContainer = this.container.querySelector('.final-scores');
     const messageContainer = this.container.querySelector('.outro-message');
     
-    // Sort players by score
+    // sort players by score
     const sortedPlayers = [...this.results.players].sort((a, b) => b.score - a.score);
     
-    // Display scores
+    // display scores
     scoresContainer.innerHTML = `
       <h3>Eindscores</h3>
       ${sortedPlayers.map((player, index) => `
@@ -69,7 +69,7 @@ export default class OutroScene {
       </div>
     `;
     
-    // Dynamic message based on performance
+    // dynamic message based on performance
     const avgScore = this.results.totalScore / sortedPlayers.length;
     let message = '';
     
@@ -87,15 +87,12 @@ export default class OutroScene {
   }
 
   playOutro() {
-    // Auto-complete after timer
-    // In production, this would match your outro audio/video duration
+    // auto-complete after timer
     this.outroTimer = setTimeout(() => {
       this.onOutroComplete();
-    }, 8000); // Give time to see scores, outro plays 20s in GameStateManager
+    }, 8000); // give time to see scores, outro plays 20s in GameStateManager
     
-    // TODO: Add your audio/video playback here
-    // const audio = new Audio('path/to/outro.mp3');
-    // audio.play();
+    // TODO: add audio/video playback here
   }
 
   onOutroComplete() {

@@ -7,10 +7,9 @@ export default class PlayerManager {
     this.keyStates = new Map();
     this.keyTimers = new Map();
     this.isListening = false;
-    this.initialPlayers = new Set(); // Players who started the game
-    this.gameStarted = false; // Track if game has started
+    this.initialPlayers = new Set(); // players who started the game
+    this.gameStarted = false; // track if game has started
     
-    // Initialize player slots
     this.initializePlayers();
   }
 
@@ -45,7 +44,7 @@ export default class PlayerManager {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
     
-    // Clear all timers
+    // clear all timers
     this.keyTimers.forEach(timer => clearTimeout(timer));
     this.keyTimers.clear();
   }
@@ -55,16 +54,16 @@ export default class PlayerManager {
     
     const key = event.key.toLowerCase();
     
-    // Check if this key is mapped to a player
+    // check if this key is mapped to a player
     const player = this.getPlayerByKey(key);
     if (!player) return;
     
-    // Prevent repeat events
+    // prevent repeat events
     if (this.keyStates.get(key)) return;
     
     this.keyStates.set(key, true);
     
-    // Set timer for plate activation threshold
+    // set timer for plate activation threshold
     const timer = setTimeout(() => {
       this.activatePlayer(player.id);
     }, PlayerConfig.PLATE_HOLD_THRESHOLD);
@@ -81,13 +80,13 @@ export default class PlayerManager {
     
     this.keyStates.set(key, false);
     
-    // Clear activation timer if key released before threshold
+    // clear activation timer if key released before threshold
     if (this.keyTimers.has(key)) {
       clearTimeout(this.keyTimers.get(key));
       this.keyTimers.delete(key);
     }
     
-    // Set timer for plate deactivation
+    // set timer for plate deactivation
     const timer = setTimeout(() => {
       this.deactivatePlayer(player.id);
     }, PlayerConfig.PLATE_LEAVE_THRESHOLD);
@@ -103,18 +102,18 @@ export default class PlayerManager {
     player.isOnPlate = true;
     
     if (!wasActive) {
-      // If game hasn't started, allow them to join
+      // if game hasn't started, allow them to join
       if (!this.gameStarted) {
         player.isActive = true;
         player.joinedAt = Date.now();
         console.log(`[PlayerManager] Player ${playerId} joined the game`);
         gameEvents.emit(Events.PLAYER_JOIN, { playerId, player });
       } else {
-        // Game already started - they can't join
+        // game already started - they can't join
         console.log(`[PlayerManager] Player ${playerId} tried to join but game already started`);
       }
     } else {
-      // Player returning to plate
+      // player returning to plate
       console.log(`[PlayerManager] Player ${playerId} back on plate`);
       gameEvents.emit(Events.PLAYER_ACTIVE, { playerId, player });
     }
@@ -127,6 +126,12 @@ export default class PlayerManager {
     player.isOnPlate = false;
     console.log(`[PlayerManager] Player ${playerId} left plate`);
     gameEvents.emit(Events.PLAYER_INACTIVE, { playerId, player });
+    
+    // if game hasn't started yet, leaving plate means they're out completely
+    if (!this.gameStarted && player.isActive) {
+      console.log(`[PlayerManager] Player ${playerId} left during selection, removing them`);
+      this.removePlayer(playerId);
+    }
   }
 
   removePlayer(playerId) {
@@ -171,7 +176,7 @@ export default class PlayerManager {
   }
 
   lockInPlayers() {
-    // Lock in the current active players as the initial game players
+    // lock in the current active players as the initial game players
     this.gameStarted = true;
     this.initialPlayers.clear();
     const activePlayers = this.getActivePlayers();
