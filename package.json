@@ -1,6 +1,6 @@
 {
   "name": "de-verloren-wereld",
-  "version": "0.0.1-alpha",
+  "version": "0.0.2-alpha",
   "description": "Een interactieve installatie voor het JEF evenement in Antwerpen, 2025. Gemaakt door Deviners",
   "main": "src/main.js",
   "productName": "De Verloren Wereld",
@@ -21,6 +21,7 @@
     "@electron-forge/maker-zip": "^7.10.2",
     "@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
     "@electron-forge/plugin-fuses": "^7.10.2",
+    "@electron-forge/publisher-github": "^7.10.2",
     "@electron/fuses": "^1.8.0",
     "electron": "^39.2.1"
   },
