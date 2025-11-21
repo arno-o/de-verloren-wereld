@@ -33,13 +33,15 @@ export default class GameStateManager {
     });
 
     gameEvents.on(Events.PLAYER_INACTIVE, (data) => {
-      if (this.isInGameState()) {
+      // Only handle player leaves during player check scenes, not during actual games
+      if (this.currentState === GameStates.PLAYER_CHECK_1 || this.currentState === GameStates.PLAYER_CHECK_2) {
         this.handlePlayerLeave(data.playerId);
       }
     });
 
     gameEvents.on(Events.PLAYER_ACTIVE, (data) => {
-      if (this.isInGameState()) {
+      // Only handle player returns during player check scenes
+      if (this.currentState === GameStates.PLAYER_CHECK_1 || this.currentState === GameStates.PLAYER_CHECK_2) {
         this.handlePlayerReturn(data.playerId);
       }
     });
