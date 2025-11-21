@@ -109,8 +109,9 @@ export default class PlayerManager {
         console.log(`[PlayerManager] Player ${playerId} joined the game`);
         gameEvents.emit(Events.PLAYER_JOIN, { playerId, player });
       } else {
-        // game already started - they can't join
-        console.log(`[PlayerManager] Player ${playerId} tried to join but game already started`);
+        // game already started - they can't join, but emit event for gameplay
+        console.log(`[PlayerManager] Player ${playerId} stepped on plate during game`);
+        gameEvents.emit(Events.PLAYER_ACTIVE, { playerId, player });
       }
     } else {
       // player returning to plate

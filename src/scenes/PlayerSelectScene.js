@@ -94,15 +94,13 @@ export default class PlayerSelectScene {
   checkMinimumPlayers() {
     const activeCount = this.playerManager.getActivePlayerCount();
 
-    if (activeCount < PlayerConfig.MIN_PLAYERS) {
-      // below minimum
+    if (activeCount < PlayerConfig.MIN_PLAYERS) {     // below minimum
       this.stopCountdown();
       this.remainingTime = SceneConfig.PLAYER_SELECT_WAIT / 1000;
       if (this.timerElement) this.timerElement.textContent = this.remainingTime;
       this.countdownMessage?.classList.add('hidden');
       this.minPlayersMessage?.classList.remove('hidden');
-    } else {
-      // reached minimum
+    } else {                                          // reached minimum
       if (!this.isCountdownRunning) {
         this.startCountdown();
       }

@@ -33,13 +33,15 @@ export default class GameStateManager {
     });
 
     gameEvents.on(Events.PLAYER_INACTIVE, (data) => {
-      if (this.isInGameState()) {
+      // only handle player leaves during player check scenes, not during actual games
+      if (this.currentState === GameStates.PLAYER_CHECK_1 || this.currentState === GameStates.PLAYER_CHECK_2) {
         this.handlePlayerLeave(data.playerId);
       }
     });
 
     gameEvents.on(Events.PLAYER_ACTIVE, (data) => {
-      if (this.isInGameState()) {
+      // only handle player returns during player check scenes
+      if (this.currentState === GameStates.PLAYER_CHECK_1 || this.currentState === GameStates.PLAYER_CHECK_2) {
         this.handlePlayerReturn(data.playerId);
       }
     });
@@ -69,7 +71,7 @@ export default class GameStateManager {
 
   startIntro() {
     console.log('[GameStateManager] Starting intro...');
-    // Lock in the players who are starting the game
+    // lock in players
     this.playerManager.lockInPlayers();
     this.setState(GameStates.INTRO);
     this.sceneManager.switchScene('intro');
@@ -145,7 +147,7 @@ export default class GameStateManager {
   }
 
   handlePlayerLeave(playerId) {
-    // Only track leaves for initial players
+    // only track leaves for initial players
     if (!this.playerManager.isInitialPlayer(playerId)) {
       console.log(`[GameStateManager] Player ${playerId} not an initial player, ignoring leave`);
       return;
@@ -153,14 +155,14 @@ export default class GameStateManager {
     
     console.log(`[GameStateManager] Initial player ${playerId} left during game`);
     
-    // Already tracking this player's leave?
+    // already tracking this player's leave?
     if (this.missingPlayers.has(playerId)) {
       return;
     }
     
     this.missingPlayers.set(playerId, { timestamp: Date.now() });
     
-    // Pause game and wait 5 seconds
+    // pause game and wait 5 seconds
     gameEvents.emit(Events.GAME_PAUSE, { playerId });
     
     const timer = setTimeout(() => {
@@ -170,7 +172,7 @@ export default class GameStateManager {
         this.playerManager.removePlayer(playerId);
         this.missingPlayers.delete(playerId);
         
-        // Count remaining initial players who are still active
+        // count remaining initial players who are still active
         const remainingInitialPlayers = this.playerManager.getInitialPlayers().filter(p => p.isActive);
         
         if (remainingInitialPlayers.length === 0) {
@@ -191,14 +193,14 @@ export default class GameStateManager {
       console.log(`[GameStateManager] Player ${playerId} returned!`);
       this.missingPlayers.delete(playerId);
       
-      // Clear their timeout
+      // clear their timeout
       const timerKey = `player-${playerId}-leave`;
       if (this.timers.has(timerKey)) {
         clearTimeout(this.timers.get(timerKey));
         this.timers.delete(timerKey);
       }
       
-      // Only resume if no other players are missing
+      // only resume if no other players are missing
       if (this.missingPlayers.size === 0) {
         gameEvents.emit(Events.GAME_RESUME);
       }

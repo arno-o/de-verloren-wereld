@@ -15,6 +15,7 @@ const createWindow = () => {
   
   win.setTitle('De Verloren Wereld');
   win.loadFile('index.html');
+  win.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {
