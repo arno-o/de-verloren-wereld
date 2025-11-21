@@ -1,3 +1,4 @@
+import { SceneConfig } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class IntroScene {
@@ -34,21 +35,14 @@ export default class IntroScene {
     this.isActive = true;
     this.container.classList.remove('hidden');
     
-    // Play intro story
+    // play intro story
     this.playIntro();
   }
 
   playIntro() {
-    // Example: Auto-complete after 10 seconds
-    // Replace with your actual intro audio/video duration
     this.introTimer = setTimeout(() => {
       this.onIntroComplete();
-    }, 10000);
-    
-    // TODO: Add your audio playback here
-    // const audio = new Audio('path/to/intro.mp3');
-    // audio.play();
-    // audio.onended = () => this.onIntroComplete();
+    }, SceneConfig.INTRO_DURATION);
   }
 
   onIntroComplete() {
