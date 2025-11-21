@@ -22,17 +22,18 @@ export const PlayerConfig = {
     PLAYER_4: 'r'
   },
   PLATE_HOLD_THRESHOLD: 500, // half a second before they're seeon on the plate
-  PLATE_LEAVE_THRESHOLD: 1000 // 1s wait before it counts as a leave
+  PLATE_LEAVE_THRESHOLD: 500 // half a second before it counts as a leave
 };
 
 // Scene configuration
 export const SceneConfig = {
-  PLAYER_SELECT_WAIT: 15000, // 15s wait after players join before game starts
-  PLAYER_LEAVE_WAIT: 5000, // 5s wait for player to return before removing them
-  MIN_PLAYERS_GRACE_PERIOD: 10000, // 10s grace period when below min players during check
-  PLAYER_CHECK_PAUSE: 5000, // 5s pause to check if player returns
-  OUTRO_DURATION: 20000, // 20s outro before returning to idle
-  TRANSITION_DURATION: 1000 // 1s fade transition
+  PLAYER_SELECT_WAIT: 1000, // should be 15000 in production
+  PLAYER_LEAVE_WAIT: 5000,
+  MIN_PLAYERS_GRACE_PERIOD: 10000,
+  PLAYER_CHECK_PAUSE: 5000,
+  INTRO_DURATION: 1000,
+  OUTRO_DURATION: 20000,
+  TRANSITION_DURATION: 1000,
 };
 
 // Scene IDs matching HTML elements
