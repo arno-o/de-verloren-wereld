@@ -1,3 +1,10 @@
+export const DEV_MODE = {
+  ENABLED: true,
+  START_SCENE: 'game2', // options: null, 'idle', 'player-select', 'intro', 'game1', 'game2', 'outro'
+  MOCK_PLAYERS: 2,
+  RESET_KEY: 'm'
+};
+
 // Game state constants
 export const GameStates = {
   IDLE: 'idle',
@@ -21,8 +28,8 @@ export const PlayerConfig = {
     PLAYER_3: 'e',
     PLAYER_4: 'r'
   },
-  PLATE_HOLD_THRESHOLD: 500, // half a second before they're seeon on the plate
-  PLATE_LEAVE_THRESHOLD: 500 // half a second before it counts as a leave
+  PLATE_HOLD_THRESHOLD: 100,
+  PLATE_LEAVE_THRESHOLD: 100
 };
 
 // Scene configuration

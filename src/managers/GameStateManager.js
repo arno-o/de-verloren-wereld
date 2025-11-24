@@ -1,4 +1,4 @@
-import { GameStates, SceneConfig } from '../utils/constants.js';
+import { GameStates, SceneConfig, DEV_MODE } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
 import SceneManager from './SceneManager.js';
 import PlayerManager from './PlayerManager.js';
@@ -17,6 +17,51 @@ export default class GameStateManager {
     
     this.sceneManager.init(this.playerManager);
     this.setupEventListeners();
+    
+    // dev mode check
+    if (DEV_MODE.ENABLED) {
+      console.log(`[GameStateManager] DEV MODE: starting at scene "${DEV_MODE.START_SCENE}"`);
+      this.setupDevMode();
+    }
+  }
+
+  setupDevMode() {
+    // create mock players
+    const mockPlayerCount = Math.min(Math.max(DEV_MODE.MOCK_PLAYERS, 2), 4);
+    console.log(`[GameStateManager] DEV MODE: creating ${mockPlayerCount} mock players`);
+    
+    for (let i = 1; i <= mockPlayerCount; i++) {
+      const player = this.playerManager.getPlayer(i);
+      player.isActive = true;
+      player.isOnPlate = true;
+      player.joinedAt = Date.now();
+      this.playerManager.initialPlayers.add(i);
+    }
+    
+    this.playerManager.gameStarted = true;
+    
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === DEV_MODE.RESET_KEY && DEV_MODE.ENABLED) {
+        console.log('[GameStateManager] DEV MODE: restarting scene');
+        
+        this.startDevScene(DEV_MODE.START_SCENE);
+      }
+    });
+  }
+
+  getCurrentSceneName() {
+    // map current state to scene name
+    switch (this.currentState) {
+      case GameStates.IDLE: return 'idle';
+      case GameStates.PLAYER_SELECT: return 'player-select';
+      case GameStates.INTRO: return 'intro';
+      case GameStates.GAME_1: return 'game1';
+      case GameStates.PLAYER_CHECK_1: return 'player-check';
+      case GameStates.GAME_2: return 'game2';
+      case GameStates.PLAYER_CHECK_2: return 'player-check';
+      case GameStates.OUTRO: return 'outro';
+      default: return null;
+    }
   }
 
   setupEventListeners() {
@@ -58,9 +103,41 @@ export default class GameStateManager {
   start() {
     console.log('[GameStateManager] Starting game...');
     this.init();
-    this.setState(GameStates.IDLE);
-    this.sceneManager.switchScene('idle');
+    
+    if (DEV_MODE.ENABLED && DEV_MODE.START_SCENE !== 'idle') {
+      this.startDevScene(DEV_MODE.START_SCENE);
+    } else {
+      this.setState(GameStates.IDLE);
+      this.sceneManager.switchScene('idle');
+    }
+    
     this.playerManager.startListening();
+  }
+
+  startDevScene(sceneName) {
+    console.log(`[GameStateManager] DEV MODE: jumping to ${sceneName}`);
+    
+    switch (sceneName) {
+      case 'player-select':
+        this.startPlayerSelect();
+        break;
+      case 'intro':
+        this.startIntro();
+        break;
+      case 'game1':
+        this.startGame1();
+        break;
+      case 'game2':
+        this.startGame2();
+        break;
+      case 'outro':
+        this.startOutro();
+        break;
+      default:
+        console.warn(`[GameStateManager] DEV MODE: unknown scene "${sceneName}", starting at idle`);
+        this.setState(GameStates.IDLE);
+        this.sceneManager.switchScene('idle');
+    }
   }
 
   startPlayerSelect() {
