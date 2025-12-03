@@ -2,18 +2,31 @@ import { GameStates, SceneConfig, DEV_MODE } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
 import SceneManager from './SceneManager.js';
 import PlayerManager from './PlayerManager.js';
+import BackgroundManager from './BackgroundManager.js';
 
 export default class GameStateManager {
   constructor() {
     this.currentState = GameStates.IDLE;
     this.sceneManager = new SceneManager();
     this.playerManager = new PlayerManager();
+    this.backgroundManager = new BackgroundManager();
     this.timers = new Map();
     this.missingPlayers = new Map(); // playerId -> timer info
   }
 
-  init() {
+  async init() {
     console.log('[GameStateManager] Initializing...');
+    
+    // Initialize background animation
+    const backgroundContainer = document.getElementById('background-container');
+    if (backgroundContainer) {
+      try {
+        await this.backgroundManager.init(backgroundContainer);
+        console.log('[GameStateManager] Background animation loaded');
+      } catch (error) {
+        console.error('[GameStateManager] Failed to load background animation:', error);
+      }
+    }
     
     this.sceneManager.init(this.playerManager);
     this.setupEventListeners();
@@ -100,15 +113,17 @@ export default class GameStateManager {
     });
   }
 
-  start() {
+  async start() {
     console.log('[GameStateManager] Starting game...');
-    this.init();
+    await this.init();
     
     if (DEV_MODE.ENABLED && DEV_MODE.START_SCENE !== 'idle') {
       this.startDevScene(DEV_MODE.START_SCENE);
     } else {
       this.setState(GameStates.IDLE);
       this.sceneManager.switchScene('idle');
+      // Start with idle background
+      this.backgroundManager.goToIdle();
     }
     
     this.playerManager.startListening();
@@ -120,23 +135,32 @@ export default class GameStateManager {
     switch (sceneName) {
       case 'player-select':
         this.startPlayerSelect();
+        // Player select still uses idle background
+        this.backgroundManager.goToIdle();
         break;
       case 'intro':
         this.startIntro();
         break;
       case 'game1':
         this.startGame1();
+        // Skip transition, go directly to game background in dev mode
+        this.backgroundManager.goToGame();
         break;
       case 'game2':
         this.startGame2();
+        // Skip transition, go directly to game background in dev mode
+        this.backgroundManager.goToGame();
         break;
       case 'outro':
         this.startOutro();
+        // Outro also uses game background
+        this.backgroundManager.goToGame();
         break;
       default:
         console.warn(`[GameStateManager] DEV MODE: unknown scene "${sceneName}", starting at idle`);
         this.setState(GameStates.IDLE);
         this.sceneManager.switchScene('idle');
+        this.backgroundManager.goToIdle();
     }
   }
 
@@ -152,6 +176,9 @@ export default class GameStateManager {
     this.playerManager.lockInPlayers();
     this.setState(GameStates.INTRO);
     this.sceneManager.switchScene('intro');
+    
+    // Trigger background transition from Idle to Game
+    this.backgroundManager.transitionToGame();
   }
 
   startGame1() {
@@ -291,6 +318,9 @@ export default class GameStateManager {
     this.playerManager.reset();
     this.setState(GameStates.IDLE);
     this.sceneManager.switchScene('idle');
+    
+    // Reset background to idle animation
+    this.backgroundManager.goToIdle();
   }
 
   clearAllTimers() {
