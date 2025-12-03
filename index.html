@@ -3,13 +3,16 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
-  <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:" />
+  <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data: blob:" />
   <title>De Verloren Wereld</title>
   <link rel="stylesheet" href="./src/styles/main.css">
 </head>
 
 <body>
+  <!-- Background animation layer (always behind game content) -->
+  <div id="background-container"></div>
+  
   <div id="game-container">
     <div id="scene-idle" class="scene"></div>
     <div id="scene-player-select" class="scene hidden"></div>

@@ -11,11 +11,29 @@ body {
   color: #fff;
 }
 
+/* Background Animation Layer */
+#background-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none; /* Allow clicks to pass through to game content */
+}
+
+#background-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
+
 #game-container {
   position: relative;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  z-index: 1; /* Above background */
 }
 
 .scene {
