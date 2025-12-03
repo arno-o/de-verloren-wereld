@@ -1,3 +1,40 @@
+export const DEV_MODE = {
+  ENABLED: false,
+  START_SCENE: 'game2', // options: null, 'idle', 'player-select', 'intro', 'game1', 'game2', 'outro'
+  MOCK_PLAYERS: 2,
+  RESET_KEY: 'm'
+};
+
+export const BackgroundStates = {
+  IDLE: 'IDLE',
+  TRANSITION: 'TRANSITION',
+  GAME: 'GAME'
+};
+
+export const BackgroundConfig = {
+  FPS: 25,
+  SEGMENTS: {
+    // Idle: 0-8 seconds (frames 0-200)
+    IDLE: {
+      startFrame: 0,
+      endFrame: 200,
+      loop: true
+    },
+    // Transition: 8-10 seconds (frames 200-250)
+    TRANSITION: {
+      startFrame: 200,
+      endFrame: 250,
+      loop: false
+    },
+    // Game: 10-14 seconds (frames 250-350)
+    GAME: {
+      startFrame: 250,
+      endFrame: 350,
+      loop: true
+    }
+  }
+};
+
 // Game state constants
 export const GameStates = {
   IDLE: 'idle',
@@ -21,8 +58,8 @@ export const PlayerConfig = {
     PLAYER_3: 'e',
     PLAYER_4: 'r'
   },
-  PLATE_HOLD_THRESHOLD: 500, // half a second before they're seeon on the plate
-  PLATE_LEAVE_THRESHOLD: 500 // half a second before it counts as a leave
+  PLATE_HOLD_THRESHOLD: 100,
+  PLATE_LEAVE_THRESHOLD: 100
 };
 
 // Scene configuration

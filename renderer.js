@@ -9,6 +9,24 @@ window.addEventListener('DOMContentLoaded', () => {
   gameStateManager.start();
 });
 
+// ctrl+shift+q to quit
+window.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'q') {
+    console.log('[Renderer] Emergency quit requested');
+    if (window.electronAPI) {
+      window.electronAPI.quitApp();
+    }
+  }
+  
+  // ctrl+shift+r to restart
+  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'r') {
+    console.log('[Renderer] Emergency restart requested');
+    if (window.electronAPI) {
+      window.electronAPI.restartApp();
+    }
+  }
+});
+
 if (window.versions) {
   console.log(`Chrome: v${window.versions.chrome()}`);
   console.log(`Node: v${window.versions.node()}`);
