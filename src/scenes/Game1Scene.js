@@ -12,13 +12,15 @@ export default class Game1Scene {
     this.resumeListener = null;
     
     // Game state
-    this.sequence = []; // Random sequence of player IDs
-    this.currentRound = 0; // Current round (starts at 0, shows 1 player, then 2, etc.)
-    this.playerInput = []; // Current player input
-    this.isShowingSequence = false; // True when showing the sequence to players
-    this.isAcceptingInput = false; // True when waiting for plate activations
-    this.playerBlocks = []; // DOM references to the player blocks
-    this.activePlayers = []; // List of active player IDs
+    this.sequence = [];
+    this.playerInput = [];
+    this.isShowingSequence = false;
+    this.isAcceptingInput = false;
+    this.playerBlocks = [];
+    this.activePlayers = [];
+    this.failCount = 0;
+    this.maxFails = 3;
+    this.sequenceLength = 4;
     
     // Event listeners
     this.playerActiveListener = null;
@@ -39,7 +41,7 @@ export default class Game1Scene {
           </div>
         </div>
         <div class="game-info">
-          <p class="round-info">Ronde: <span class="round-number">0</span></p>
+          <p class="round-info">Pogingen over: <span class="attempts-left">3</span></p>
           <p class="instruction">Onthoud de volgorde...</p>
         </div>
         <div class="pause-overlay hidden">
@@ -91,58 +93,47 @@ export default class Game1Scene {
   }
 
   startGameLogic() {
-    // Generate random sequence using active player IDs
+    this.failCount = 0;
+    this.updateAttemptsDisplay();
+    
+    this.startNewSequence();
+  }
+
+  startNewSequence() {
     this.sequence = this.generateSequence();
-    this.currentRound = 0;
     this.playerInput = [];
     
     console.log('[Game1Scene] Generated sequence:', this.sequence);
     
-    // Start first round after a short delay
     setTimeout(() => {
-      this.startRound();
+      this.showSequence();
     }, 1000);
   }
 
   generateSequence() {
-    // Create a shuffled sequence of all 4 player IDs
-    const sequence = [1, 2, 3, 4];
-    for (let i = sequence.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [sequence[i], sequence[j]] = [sequence[j], sequence[i]];
+    const sequence = [];
+    for (let i = 0; i < this.sequenceLength; i++) {
+      sequence.push(Math.floor(Math.random() * 4) + 1);
     }
     return sequence;
-  }
-
-  startRound() {
-    if (this.isPaused) return;
-    
-    this.currentRound++;
-    this.playerInput = [];
-    this.updateRoundDisplay();
-    this.updateInstruction('Onthoud de volgorde...');
-    
-    console.log(`[Game1Scene] Starting round ${this.currentRound}`);
-    
-    // Show sequence up to current round
-    this.showSequence();
   }
 
   async showSequence() {
     this.isShowingSequence = true;
     this.isAcceptingInput = false;
+    this.updateInstruction('Onthoud de volgorde...');
     
-    // Show each player block in sequence up to current round
-    for (let i = 0; i < this.currentRound; i++) {
+    for (let i = 0; i < this.sequence.length; i++) {
       if (this.isPaused) return;
       
       const playerId = this.sequence[i];
       await this.activatePlayerBlock(playerId);
-      await this.delay(200); // Short delay between activations
+      await this.delay(200);
     }
     
     this.isShowingSequence = false;
     this.isAcceptingInput = true;
+    this.playerInput = [];
     this.updateInstruction('Stap op jullie velden in de juiste volgorde!');
   }
 
@@ -162,7 +153,7 @@ export default class Game1Scene {
   handlePlateActivation(playerId) {
     if (!this.isAcceptingInput || this.isPaused || !this.isActive) return;
     
-    // Accept input from any plate (1-4)
+    // accept input from any plate (1-4)
     if (playerId < 1 || playerId > 4) return;
     
     console.log(`[Game1Scene] Player ${playerId} stepped on plate`);
@@ -187,49 +178,51 @@ export default class Game1Scene {
       return;
     }
     
-    // check if round is complete
-    if (this.playerInput.length === this.currentRound) {
-      this.handleRoundComplete();
+    // check if sequence is complete
+    if (this.playerInput.length === this.sequence.length) {
+      this.handleSequenceComplete();
     }
   }
 
   handleWrongInput() {
     console.log('[Game1Scene] Wrong input!');
     this.isAcceptingInput = false;
-    this.updateInstruction('Fout! Probeer opnieuw...');
+    this.failCount++;
+    this.updateAttemptsDisplay();
     
-    // flash all player blocks red or show error
     this.playerBlocks.forEach(block => block.classList.add('error'));
+    
     setTimeout(() => {
       this.playerBlocks.forEach(block => block.classList.remove('error'));
-      // restart current round
-      setTimeout(() => this.startRound(), 500);
+      
+      if (this.failCount >= this.maxFails) {
+        this.updateInstruction('Te veel fouten! Door naar het volgende spel...');
+        setTimeout(() => {
+          this.onGameComplete();
+        }, 1500);
+      } else {
+        this.updateInstruction(`Fout! Nog ${this.maxFails - this.failCount} poging(en) over...`);
+        setTimeout(() => {
+          this.startNewSequence();
+        }, 1000);
+      }
     }, 800);
   }
 
-  handleRoundComplete() {
-    console.log(`[Game1Scene] Round ${this.currentRound} complete!`);
+  handleSequenceComplete() {
+    console.log('[Game1Scene] Sequence complete!');
     this.isAcceptingInput = false;
     
-    if (this.currentRound === 4) {
-      // game complete
-      this.updateInstruction('Gelukt! 🎉');
-      setTimeout(() => {
-        this.onGameComplete();
-      }, 1500);
-    } else {
-      // next round
-      this.updateInstruction('Correct!');
-      setTimeout(() => {
-        this.startRound();
-      }, 1000);
-    }
+    this.updateInstruction('Gelukt! 🎉');
+    setTimeout(() => {
+      this.onGameComplete();
+    }, 1500);
   }
 
-  updateRoundDisplay() {
-    const roundNumber = this.container.querySelector('.round-number');
-    if (roundNumber) {
-      roundNumber.textContent = this.currentRound;
+  updateAttemptsDisplay() {
+    const attemptsLeft = this.container.querySelector('.attempts-left');
+    if (attemptsLeft) {
+      attemptsLeft.textContent = this.maxFails - this.failCount;
     }
   }
 
