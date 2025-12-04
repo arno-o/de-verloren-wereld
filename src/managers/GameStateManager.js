@@ -227,7 +227,8 @@ export default class GameStateManager {
         break;
         
       case 'game2':
-        this.startPlayerCheck(2);
+        // Skip player check after game 2, go directly to outro
+        this.startOutro();
         break;
         
       case 'player-check-2':

@@ -54,9 +54,9 @@ export const PlayerConfig = {
   MAX_PLAYERS: 4,
   PLATE_KEYS: {
     PLAYER_1: 'a',
-    PLAYER_2: 'z',
-    PLAYER_3: 'e',
-    PLAYER_4: 'r'
+    PLAYER_2: 'b',
+    PLAYER_3: 'c',
+    PLAYER_4: 'd'
   },
   PLATE_HOLD_THRESHOLD: 100,
   PLATE_LEAVE_THRESHOLD: 100
@@ -64,7 +64,7 @@ export const PlayerConfig = {
 
 // Scene configuration
 export const SceneConfig = {
-  PLAYER_SELECT_WAIT: 1000, // should be 15000 in production
+  PLAYER_SELECT_WAIT: 15000, // should be 15000 in production
   PLAYER_LEAVE_WAIT: 5000,
   MIN_PLAYERS_GRACE_PERIOD: 10000,
   PLAYER_CHECK_PAUSE: 5000,
@@ -85,8 +85,8 @@ export const SceneIds = {
 };
 
 export const AvatarColors = [
-  '#FF6B6B',
-  '#4ECDC4',
-  '#FFE66D',
-  '#95E1D3'
+  '#6ECFF6',
+  '#F68935',
+  '#6BA743',
+  '#7575dfff'
 ];
