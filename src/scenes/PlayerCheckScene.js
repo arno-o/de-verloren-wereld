@@ -1,4 +1,4 @@
-import { AvatarColors } from '../utils/constants.js';
+import { AvatarColors, PlayerConfig, SceneConfig } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class PlayerCheckScene {
@@ -19,32 +19,21 @@ export default class PlayerCheckScene {
 
   setupHTML() {
     this.container.innerHTML = `
-      <div class="player-check-content">
+      <div class="player-select-content">
         <h2>Iedereen terug op zijn veld!</h2>
-        <div class="check-message">
-          <p>Ga op je veld staan om door te gaan...</p>
+        <p class="instructions">Ga op je veld staan om door te gaan</p>
+        
+        <div class="player-avatars">
+          ${Array.from({ length: PlayerConfig.MAX_PLAYERS }, (_, i) => `
+            <div class="avatar-slot" data-player="${i + 1}">
+              <div class="avatar empty"></div>
+              <span>Speler ${i + 1}</span>
+            </div>
+          `).join('')}
         </div>
-        <div class="player-check-grid">
-          <div class="player-check-slot" data-player="1">
-            <div class="avatar"></div>
-            <span>Speler 1</span>
-            <div class="status-indicator"></div>
-          </div>
-          <div class="player-check-slot" data-player="2">
-            <div class="avatar"></div>
-            <span>Speler 2</span>
-            <div class="status-indicator"></div>
-          </div>
-          <div class="player-check-slot" data-player="3">
-            <div class="avatar"></div>
-            <span>Speler 3</span>
-            <div class="status-indicator"></div>
-          </div>
-          <div class="player-check-slot" data-player="4">
-            <div class="avatar"></div>
-            <span>Speler 4</span>
-            <div class="status-indicator"></div>
-          </div>
+        
+        <div class="countdown">
+          <p id="check-message">Wachten op spelers...</p>
         </div>
       </div>
     `;
@@ -71,26 +60,29 @@ export default class PlayerCheckScene {
     const initialPlayerIds = Array.from(this.playerManager.initialPlayers);
     const players = this.playerManager.getActivePlayers();
     
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= PlayerConfig.MAX_PLAYERS; i++) {
       const slot = this.container.querySelector(`[data-player="${i}"]`);
+      const avatar = slot.querySelector('.avatar');
       const isInitialPlayer = initialPlayerIds.includes(i);
       const player = players.find(p => p.id === i);
       
       if (!isInitialPlayer || !player) {
-        slot.classList.add('hidden');
+        // not an initial player - show as empty
+        slot.style.opacity = '0.3';
+        avatar.classList.add('empty');
+        avatar.classList.remove('active', 'waiting');
+        avatar.style.backgroundColor = '';
       } else {
-        slot.classList.remove('hidden');
-        const avatar = slot.querySelector('.avatar');
-        const indicator = slot.querySelector('.status-indicator');
-        
+        slot.style.opacity = '1';
+        avatar.classList.remove('empty');
         avatar.style.backgroundColor = AvatarColors[i - 1];
         
         if (player.isOnPlate) {
-          indicator.classList.add('ready');
-          indicator.classList.remove('waiting');
+          avatar.classList.add('active');
+          avatar.classList.remove('waiting');
         } else {
-          indicator.classList.remove('ready');
-          indicator.classList.add('waiting');
+          avatar.classList.remove('active');
+          avatar.classList.add('waiting');
         }
       }
     }
@@ -105,7 +97,7 @@ export default class PlayerCheckScene {
       const initialPlayers = this.playerManager.getInitialPlayers().filter(p => p.isActive);
       const initialPlayersCount = initialPlayers.length;
       
-      // Check if we have minimum players
+      // check if we have minimum players
       if (initialPlayersCount < 2) {
         if (!this.inGracePeriod) {
           console.log('[PlayerCheckScene] Below minimum players, starting grace period');
@@ -113,7 +105,7 @@ export default class PlayerCheckScene {
           this.updateMessage('Wachten op meer spelers...');
           
           this.gracePeriodTimer = setTimeout(() => {
-            // Still below minimum? Reset to idle
+            // still below minimum? Reset to idle
             const stillBelowMin = this.playerManager.getInitialPlayers().filter(p => p.isActive).length < 2;
             if (stillBelowMin) {
               console.log('[PlayerCheckScene] Grace period expired, resetting to idle');
@@ -125,7 +117,7 @@ export default class PlayerCheckScene {
         return;
       }
       
-      // We have enough players, cancel grace period if active
+      // we have enough players, cancel grace period if active
       if (this.inGracePeriod) {
         console.log('[PlayerCheckScene] Minimum players restored');
         this.inGracePeriod = false;
@@ -136,7 +128,7 @@ export default class PlayerCheckScene {
         this.updateMessage('Ga op je veld staan om door te gaan...');
       }
       
-      // Check if all initial active players are on plate
+      // check if all initial active players are on plate
       const allOnPlate = initialPlayers.every(p => p.isOnPlate);
       
       if (allOnPlate) {
@@ -154,7 +146,7 @@ export default class PlayerCheckScene {
   }
 
   updateMessage(text) {
-    const messageEl = this.container.querySelector('.check-message p');
+    const messageEl = this.container.querySelector('#check-message');
     if (messageEl) {
       messageEl.textContent = text;
     }

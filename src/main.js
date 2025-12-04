@@ -12,13 +12,13 @@ const createWindow = () => {
     webPreferences: {
       preload: path.join(__dirname, '../preload.js')
     },
-    // kiosk: true, // - this sets it to fullscreen without the option to minimize it
+    kiosk: true,
     // frame: false,
   })
   
   win.setTitle('De Verloren Wereld');
   win.loadFile('index.html');
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {
