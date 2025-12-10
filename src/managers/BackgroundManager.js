@@ -1,13 +1,13 @@
 import lottie from '../../node_modules/lottie-web/build/player/esm/lottie_canvas.min.js';
-import { BackgroundStates, BackgroundConfig } from '../utils/constants.js';
+import { BackgroundConfig } from '../utils/constants.js';
 
 class BackgroundManager {
   constructor() {
     this.animation = null;
     this.container = null;
-    this.currentState = null;
+    this.currentSegment = null;
     this.isLoaded = false;
-    this.onStateChangeComplete = null;
+    this.completeHandler = null;
   }
 
   async init(container) {
@@ -15,7 +15,7 @@ class BackgroundManager {
 
     return new Promise((resolve, reject) => {
       console.log('[BackgroundManager] Loading animation...');
-      
+
       this.animation = lottie.loadAnimation({
         container: this.container,
         renderer: 'canvas',
@@ -40,68 +40,49 @@ class BackgroundManager {
         console.error('[BackgroundManager] Failed to load animation:', error);
         reject(error);
       });
-
-      // Handle loop point for manual segment looping
-      this.animation.addEventListener('complete', () => {
-        this._onAnimationComplete();
-      });
     });
   }
 
-  setState(state, onComplete = null) {
+  /**
+   * Set and play a specific segment of the background animation
+   * @param {string} segmentName - Name of the segment (must match BackgroundConfig.SEGMENTS keys)
+   * @param {Function} onComplete - Optional callback when non-looping segment completes
+   */
+  setSegment(segmentName, onComplete = null) {
     if (!this.isLoaded) {
       console.warn('[BackgroundManager] Animation not loaded yet');
       return;
     }
 
-    if (!BackgroundStates[state]) {
-      console.error(`[BackgroundManager] Invalid state: ${state}`);
+    const config = BackgroundConfig.SEGMENTS[segmentName];
+    if (!config) {
+      console.error(`[BackgroundManager] Unknown segment: ${segmentName}`);
       return;
     }
 
-    console.log(`[BackgroundManager] Setting state: ${state}`);
-    this.currentState = state;
-    this.onStateChangeComplete = onComplete;
-
-    const config = BackgroundConfig.SEGMENTS[state];
+    console.log(`[BackgroundManager] Setting segment: ${segmentName} (frames ${config.startFrame}-${config.endFrame}, loop: ${config.loop})`);
     
-    // Play the segment
-    this.animation.playSegments([config.startFrame, config.endFrame], true);
-  }
+    this.currentSegment = segmentName;
 
-  _onAnimationComplete() {
-    if (!this.currentState) return;
-
-    const config = BackgroundConfig.SEGMENTS[this.currentState];
-
-    if (config.loop) {
-      this.animation.playSegments([config.startFrame, config.endFrame], true);
-    } else {
-      console.log(`[BackgroundManager] ${this.currentState} complete`);
-      
-      if (this.onStateChangeComplete) {
-        this.onStateChangeComplete();
-        this.onStateChangeComplete = null;
-      }
+    if (this.completeHandler) {
+      this.animation.removeEventListener('complete', this.completeHandler);
+      this.completeHandler = null;
     }
-  }
 
+    this.completeHandler = () => {
+      console.log(`[BackgroundManager] Segment ${segmentName} completed`);
+      
+      if (config.loop) {
+        this.animation.playSegments([config.startFrame, config.endFrame], true);
+      } else {
+        if (onComplete) {
+          onComplete();
+        }
+      }
+    };
 
-  transitionToGame() {
-    console.log('[BackgroundManager] Starting transition to Game...');
-    
-    this.setState('TRANSITION', () => {
-      // After transition completes, start the game loop
-      this.setState('GAME');
-    });
-  }
-
-  goToIdle() {
-    this.setState('IDLE');
-  }
-
-  goToGame() {
-    this.setState('GAME');
+    this.animation.addEventListener('complete', this.completeHandler);
+    this.animation.playSegments([config.startFrame, config.endFrame], true);
   }
 
   pause() {
@@ -116,19 +97,17 @@ class BackgroundManager {
     }
   }
 
-  setSpeed(speed) {
-    if (this.animation) {
-      this.animation.setSpeed(speed);
-    }
-  }
-
   destroy() {
+    if (this.completeHandler && this.animation) {
+      this.animation.removeEventListener('complete', this.completeHandler);
+      this.completeHandler = null;
+    }
     if (this.animation) {
       this.animation.destroy();
       this.animation = null;
     }
     this.isLoaded = false;
-    this.currentState = null;
+    this.currentSegment = null;
   }
 }
 

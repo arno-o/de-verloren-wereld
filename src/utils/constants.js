@@ -7,30 +7,45 @@ export const DEV_MODE = {
 
 export const BackgroundStates = {
   IDLE: 'IDLE',
-  TRANSITION: 'TRANSITION',
-  GAME: 'GAME'
+  TRANSITION_START: 'TRANSITION_START',
+  GAME: 'GAME',
+  TRANSITION_END: 'TRANSITION_END',
+  PROCESS_UP: 'PROCESS_UP',
+  PROCESS_DOWN: 'PROCESS_DOWN'
 };
 
 export const BackgroundConfig = {
   FPS: 25,
   SEGMENTS: {
-    // Idle: 0-8 seconds (frames 0-200)
     IDLE: {
       startFrame: 0,
       endFrame: 200,
       loop: true
     },
-    // Transition: 8-10 seconds (frames 200-250)
-    TRANSITION: {
+    TRANSITION_START: {
       startFrame: 200,
       endFrame: 250,
       loop: false
     },
-    // Game: 10-14 seconds (frames 250-350)
     GAME: {
       startFrame: 250,
       endFrame: 350,
       loop: true
+    },
+    TRANSITION_END: {
+      startFrame: 350,
+      endFrame: 400,
+      loop: false
+    },
+    PROCESS_UP: {
+      startFrame: 400,
+      endFrame: 450,
+      loop: false
+    },
+    PROCESS_DOWN: {
+      startFrame: 450,
+      endFrame: 500,
+      loop: false
     }
   }
 };
@@ -64,13 +79,14 @@ export const PlayerConfig = {
 
 // Scene configuration
 export const SceneConfig = {
-  PLAYER_SELECT_WAIT: 15000, // should be 15000 in production
+  PLAYER_SELECT_WAIT: 1000, // should be 15000 in production
   PLAYER_LEAVE_WAIT: 5000,
   MIN_PLAYERS_GRACE_PERIOD: 10000,
   PLAYER_CHECK_PAUSE: 5000,
   INTRO_DURATION: 1000,
   OUTRO_DURATION: 20000,
   TRANSITION_DURATION: 1000,
+  PROCESS_HOLD_DURATION: 3000, // time to hold on process screen before continuing
 };
 
 // Scene IDs matching HTML elements
