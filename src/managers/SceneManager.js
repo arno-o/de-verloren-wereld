@@ -19,7 +19,6 @@ export default class SceneManager {
     console.log('[SceneManager] Initializing scenes...');
     this.playerManager = playerManager;
     
-    // Get scene containers
     const idleContainer = document.getElementById(SceneIds.IDLE);
     const playerSelectContainer = document.getElementById(SceneIds.PLAYER_SELECT);
     const introContainer = document.getElementById(SceneIds.INTRO);
@@ -28,7 +27,6 @@ export default class SceneManager {
     const game2Container = document.getElementById(SceneIds.GAME_2);
     const outroContainer = document.getElementById(SceneIds.OUTRO);
 
-    // Create scene instances
     this.scenes.set('idle', new IdleScene(idleContainer));
     this.scenes.set('player-select', new PlayerSelectScene(playerSelectContainer, playerManager));
     this.scenes.set('intro', new IntroScene(introContainer, playerManager));
@@ -37,7 +35,6 @@ export default class SceneManager {
     this.scenes.set('game2', new Game2Scene(game2Container, playerManager));
     this.scenes.set('outro', new OutroScene(outroContainer, playerManager));
 
-    // Initialize all scenes
     this.scenes.forEach(scene => scene.init());
   }
 
@@ -56,13 +53,11 @@ export default class SceneManager {
     console.log(`[SceneManager] Switching to scene: ${sceneName}`);
     this.isTransitioning = true;
 
-    // Cleanup current scene
     if (this.currentScene) {
       await this.fadeOut(this.currentScene.container, transitionDuration);
       this.currentScene.cleanup();
     }
 
-    // Start new scene
     this.currentScene = nextScene;
     this.currentScene.start(options);
     await this.fadeIn(this.currentScene.container, transitionDuration);
@@ -102,5 +97,17 @@ export default class SceneManager {
 
   getCurrentScene() {
     return this.currentScene;
+  }
+
+  /**
+   * Hide the current scene immediately without switching to another scene.
+   * Useful for showing background animations between scenes.
+   * Does not set isTransitioning flag so switchScene can be called after.
+   */
+  hideCurrentScene(transitionDuration = 300) {
+    if (this.currentScene) {
+      this.currentScene.cleanup();
+      this.currentScene = null;
+    }
   }
 }

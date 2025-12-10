@@ -85,12 +85,26 @@ export default class Game2Scene {
   }
 
   initializeGameState() {
+    // Reset all game state
     this.remainingLives = 3;
     this.totalBlocksCleared = 0;
     this.currentlyFallingBlocks = [];
+    this.lastSpawnedBlockColorId = null;
+    
+    const blocksContainer = this.container.querySelector('#blocks-container');
+    if (blocksContainer) {
+      blocksContainer.innerHTML = '';
+    }
     
     // generate sequence of block colors to spawn
     this.upcomingBlockColorQueue = this.generateRandomBlockColorSequence();
+    
+    console.log('[Game2Scene] Game state initialized:', {
+      lives: this.remainingLives,
+      blocksCleared: this.totalBlocksCleared,
+      blocksToSpawn: this.totalBlocksToSpawn,
+      queueLength: this.upcomingBlockColorQueue.length
+    });
     
     const gameArea = this.container.querySelector('#tetris-area');
     this.gameAreaHeight = gameArea.clientHeight;
@@ -99,8 +113,10 @@ export default class Game2Scene {
     
     // start spawning blocks after delay
     setTimeout(() => {
-      this.spawnNextBlockFromQueue();
-      this.startGameAnimationLoop();
+      if (this.isActive) {
+        this.spawnNextBlockFromQueue();
+        this.startGameAnimationLoop();
+      }
     }, 1000);
   }
 
@@ -337,8 +353,9 @@ export default class Game2Scene {
   }
 
   handleGameComplete() {
-    console.log('[Game2Scene] game 2 completed');
-    if (this.isActive || this.remainingLives <= 0) {
+    console.log('[Game2Scene] game 2 completed, isActive:', this.isActive, 'lives:', this.remainingLives);
+    if (this.isActive) {
+      this.isActive = false; // Prevent double emission
       gameEvents.emit(Events.SCENE_COMPLETE, { scene: 'game2' });
     }
   }
