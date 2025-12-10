@@ -1,4 +1,3 @@
-import { AvatarColors } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class OutroScene {
@@ -6,7 +5,6 @@ export default class OutroScene {
     this.container = container;
     this.playerManager = playerManager;
     this.isActive = false;
-    this.results = null;
     this.outroTimer = null;
   }
 
@@ -19,12 +17,9 @@ export default class OutroScene {
     this.container.innerHTML = `
       <div class="outro-content">
         <h2>Geweldig gedaan!</h2>
-        <div class="final-scores">
-          <!-- Final scores will be displayed here -->
-        </div>
         <div class="outro-story">
           <p class="outro-message">
-            <!-- Dynamic outro message based on performance -->
+            Fantastisch! Jullie hebben het avontuur succesvol voltooid!
           </p>
         </div>
         <div class="outro-visuals">
@@ -37,60 +32,17 @@ export default class OutroScene {
   start(options = {}) {
     console.log('[OutroScene] Starting outro scene...');
     this.isActive = true;
-    this.results = options.results || { totalScore: 0, players: [] };
     this.container.classList.remove('hidden');
-    
-    // display results
-    this.displayResults();
     
     // play outro
     this.playOutro();
-  }
-
-  displayResults() {
-    const scoresContainer = this.container.querySelector('.final-scores');
-    const messageContainer = this.container.querySelector('.outro-message');
-    
-    // sort players by score
-    const sortedPlayers = [...this.results.players].sort((a, b) => b.score - a.score);
-    
-    // display scores
-    scoresContainer.innerHTML = `
-      <h3>Eindscores</h3>
-      ${sortedPlayers.map((player, index) => `
-        <div class="final-score-item" style="border-left: 4px solid ${AvatarColors[player.id - 1]}">
-          <span class="rank">#${index + 1}</span>
-          <span class="player-name">Speler ${player.id}</span>
-          <span class="score">${player.score} punten</span>
-        </div>
-      `).join('')}
-      <div class="total-score">
-        <strong>Totaal:</strong> ${this.results.totalScore} punten
-      </div>
-    `;
-    
-    // dynamic message based on performance
-    const avgScore = this.results.totalScore / sortedPlayers.length;
-    let message = '';
-    
-    if (avgScore >= 150) {
-      message = 'Fantastisch! Jullie zijn echte helden van De Verloren Wereld!';
-    } else if (avgScore >= 100) {
-      message = 'Geweldig gedaan! Jullie hebben het avontuur succesvol voltooid!';
-    } else if (avgScore >= 50) {
-      message = 'Goed gespeeld! Jullie hebben jullie best gedaan!';
-    } else {
-      message = 'Wat een avontuur! Bedankt voor het spelen!';
-    }
-    
-    messageContainer.textContent = message;
   }
 
   playOutro() {
     // auto-complete after timer
     this.outroTimer = setTimeout(() => {
       this.onOutroComplete();
-    }, 8000); // give time to see scores, outro plays 20s in GameStateManager
+    }, 8000); // give time to see message, outro plays 20s in GameStateManager
     
     // TODO: add audio/video playback here
   }
@@ -105,7 +57,6 @@ export default class OutroScene {
   cleanup() {
     console.log('[OutroScene] Cleaning up...');
     this.isActive = false;
-    this.results = null;
     
     if (this.outroTimer) {
       clearTimeout(this.outroTimer);
