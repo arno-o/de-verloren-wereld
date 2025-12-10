@@ -1,4 +1,3 @@
-// Custom event system for scene communication
 class EventEmitter {
   constructor() {
     this.events = {};

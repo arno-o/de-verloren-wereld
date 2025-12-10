@@ -186,6 +186,23 @@ body {
   }
 }
 
+/* Avatar waiting state (player check scene) */
+.avatar.waiting {
+  opacity: 0.6;
+  animation: avatarWaiting 1.5s ease-in-out infinite;
+}
+
+@keyframes avatarWaiting {
+  0%, 100% {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+  }
+  50% {
+    border-color: #ff9999;
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+  }
+}
+
 /* Game 1 Scene Styles */
 .game1-content {
   width: 100%;
@@ -359,8 +376,8 @@ body {
 
 .falling-block {
   position: absolute;
-  width: 60px;
-  height: 60px;
+  width: 150px;
+  height: 150px;
   border-radius: 8px;
   border: 3px solid;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
@@ -418,19 +435,19 @@ body {
 }
 
 .indicator.player-1 {
-  background-color: #FF6B6B;
+  background-color: #6ECFF6;
 }
 
 .indicator.player-2 {
-  background-color: #4ECDC4;
+  background-color: #F68935;
 }
 
 .indicator.player-3 {
-  background-color: #FFE66D;
+  background-color: #6BA743;
 }
 
 .indicator.player-4 {
-  background-color: #95E1D3;
+  background-color: #7575dfff;
 }
 
 .indicator span {
