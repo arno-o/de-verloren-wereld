@@ -245,6 +245,7 @@ export default class GameStateManager {
       case 'player-check-1':
         if (data.playersRemaining > 1) {
           this.startGame2();
+          this.sceneManager.hideCurrentScene();
         } else {
           this.resetToIdle();
         }
