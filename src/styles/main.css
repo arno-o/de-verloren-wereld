@@ -124,6 +124,22 @@ body {
   opacity: 0.7;
 }
 
+/* Avatar animation container */
+.avatar-animation {
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.avatar-slot[style*="opacity: 0.3"] .avatar-animation {
+  opacity: 0.3;
+  filter: grayscale(50%);
+}
+
+/* Legacy circle styles - kept for backwards compatibility */
 .avatar {
   width: 120px;
   height: 120px;
