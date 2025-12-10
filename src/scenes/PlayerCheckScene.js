@@ -56,7 +56,6 @@ export default class PlayerCheckScene {
   }
 
   updatePlayerStatus() {
-    // Only show initial players
     const initialPlayerIds = Array.from(this.playerManager.initialPlayers);
     const players = this.playerManager.getActivePlayers();
     
@@ -156,10 +155,12 @@ export default class PlayerCheckScene {
     console.log('[PlayerCheckScene] Player check completed');
     if (this.isActive) {
       const sceneName = this.checkNumber === 1 ? 'player-check-1' : 'player-check-2';
+      const playersRemaining = this.playerManager.getActivePlayerCount();
+      console.log(`[PlayerCheckScene] Emitting SCENE_COMPLETE for ${sceneName}, playersRemaining: ${playersRemaining}`);
       gameEvents.emit(Events.SCENE_COMPLETE, { 
         scene: sceneName,
         results: {
-          playersRemaining: this.playerManager.getActivePlayerCount()
+          playersRemaining: playersRemaining
         }
       });
     }

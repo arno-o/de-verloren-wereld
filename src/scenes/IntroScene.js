@@ -34,15 +34,11 @@ export default class IntroScene {
     console.log('[IntroScene] Starting intro scene...');
     this.isActive = true;
     this.container.classList.remove('hidden');
-    
-    // play intro story
     this.playIntro();
   }
 
   playIntro() {
-    this.introTimer = setTimeout(() => {
-      this.onIntroComplete();
-    }, SceneConfig.INTRO_DURATION);
+    console.log('[IntroScene] Playing intro content...');
   }
 
   onIntroComplete() {
@@ -55,12 +51,12 @@ export default class IntroScene {
   cleanup() {
     console.log('[IntroScene] Cleaning up...');
     this.isActive = false;
-    
+
     if (this.introTimer) {
       clearTimeout(this.introTimer);
       this.introTimer = null;
     }
-    
+
     this.container.classList.add('hidden');
   }
 }
