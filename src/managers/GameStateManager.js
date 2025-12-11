@@ -21,7 +21,6 @@ export default class GameStateManager {
     if (backgroundContainer) {
       try {
         await this.backgroundManager.init(backgroundContainer);
-        console.log('[GameStateManager] Background animation loaded');
       } catch (error) {
         console.error('[GameStateManager] Failed to load background animation:', error);
       }
@@ -54,7 +53,7 @@ export default class GameStateManager {
 
     window.addEventListener('keydown', (e) => {
       if (e.key.toLowerCase() === DEV_MODE.RESET_KEY && DEV_MODE.ENABLED) {
-        console.log('[GameStateManager] DEV MODE: restarting scene');
+        console.info('[GameStateManager] DEV MODE: restarting scene');
 
         this.startDevScene(DEV_MODE.START_SCENE);
       }
@@ -234,14 +233,12 @@ export default class GameStateManager {
       case 'intro':
         this.startGame1();
         break;
-
       case 'game1':
         this.sceneManager.hideCurrentScene();
         this.backgroundManager.setSegment('TRANSITION_END', () => {
           this.startPlayerCheck(1);
         });
         break;
-
       case 'player-check-1':
         if (data.playersRemaining > 1) {
           this.startGame2();
@@ -250,7 +247,6 @@ export default class GameStateManager {
           this.resetToIdle();
         }
         break;
-
       case 'game2':
         this.sceneManager.hideCurrentScene();
         this.backgroundManager.setSegment('TRANSITION_END', () => {
@@ -258,7 +254,6 @@ export default class GameStateManager {
           this.startOutro();
         });
         break;
-
       case 'player-check-2':
         if (data.playersRemaining > 1) {
           this.startOutro();
@@ -266,21 +261,19 @@ export default class GameStateManager {
           this.resetToIdle();
         }
         break;
-
       case 'outro':
         this.timers.set('outro', setTimeout(() => {
           this.resetToIdle();
         }, SceneConfig.OUTRO_DURATION));
         break;
-
       default:
         console.warn(`[GameStateManager] Unknown scene completion: ${sceneName}`);
     }
   }
 
   handlePlayerLeave(playerId) {
-    if (!this.playerManager.isInitialPlayer(playerId)) {
-      console.log(`[GameStateManager] Player ${playerId} not an initial player, ignoring leave`);
+    if (!this.playerManager.isInitialPlayer(playerId)) { 
+      console.log(`[GameStateManager] ignoring leave`);
       return;
     }
 
@@ -297,7 +290,7 @@ export default class GameStateManager {
     const timer = setTimeout(() => {
       const player = this.playerManager.getPlayer(playerId);
       if (!player.isOnPlate) {
-        console.log(`[GameStateManager] Player ${playerId} didn't return, removing them`);
+        console.log(`[GameStateManager] Removing player ${playerId} (Inactivity)`);
         this.playerManager.removePlayer(playerId);
         this.missingPlayers.delete(playerId);
 
@@ -305,10 +298,10 @@ export default class GameStateManager {
         const remainingInitialPlayers = this.playerManager.getInitialPlayers().filter(p => p.isActive);
 
         if (remainingInitialPlayers.length === 0) {
-          console.log('[GameStateManager] All initial players gone, resetting to idle');
+          console.log('[GameStateManager] Resetting (Abandoned)');
           this.resetToIdle();
         } else {
-          console.log(`[GameStateManager] ${remainingInitialPlayers.length} initial player(s) remaining, resuming game`);
+          console.log(`[GameStateManager] Resuming game`);
           gameEvents.emit(Events.GAME_RESUME);
         }
       }

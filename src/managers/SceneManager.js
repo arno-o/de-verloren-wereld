@@ -16,7 +16,6 @@ export default class SceneManager {
   }
 
   init(playerManager) {
-    console.log('[SceneManager] Initializing scenes...');
     this.playerManager = playerManager;
     
     const idleContainer = document.getElementById(SceneIds.IDLE);
@@ -39,16 +38,10 @@ export default class SceneManager {
   }
 
   async switchScene(sceneName, options = {}, transitionDuration = 300) {
-    if (this.isTransitioning) {
-      console.warn('[SceneManager] Already transitioning, ignoring request');
-      return;
-    }
+    if (this.isTransitioning) { return; }
 
     const nextScene = this.scenes.get(sceneName);
-    if (!nextScene) {
-      console.error(`[SceneManager] Scene "${sceneName}" not found`);
-      return;
-    }
+    if (!nextScene) { return; }
 
     console.log(`[SceneManager] Switching to scene: ${sceneName}`);
     this.isTransitioning = true;
