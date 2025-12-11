@@ -20,6 +20,7 @@ export default class PlayerSelectScene {
     this.timerElement = null;
     this.avatars = [];
     this.avatarStates = []; // Track current state of each avatar
+    this.countdownAnimation = null;
   }
 
   init() {
@@ -32,7 +33,7 @@ export default class PlayerSelectScene {
     
     this.container.innerHTML = `
       <div class="player-select-content">
-        <h2>Welkom spelers!</h2>
+        <h2>De Verloren Wereld</h2>
         <p class="instructions">Ga op een veld staan om mee te spelen</p>
         
         <div class="player-avatars">
@@ -44,10 +45,7 @@ export default class PlayerSelectScene {
           `).join('')}
         </div>
         
-        <div class="countdown">
-          <p id="countdown-message">Het spel begint in <span id="countdown-timer">${initialTime}</span> seconden...</p>
-          <p id="min-players-message" class="hidden">Minimaal ${PlayerConfig.MIN_PLAYERS} spelers nodig om te starten</p>
-        </div>
+        <div class="countdown"></div>
       </div>
     `;
 
@@ -85,18 +83,24 @@ export default class PlayerSelectScene {
       this.avatars.push(animation);
       this.avatarStates.push('inactive'); // Initialize state tracking
     }
+
+    const countdownContainer = document.querySelector(".countdown");
+    this.countdownAnimation = Lottie.loadAnimation({
+      container: countdownContainer,
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      path: `./assets/animations/countdown.json`,
+      rendererSettings: {
+        preserveAspectRatio: 'xMidYMid slice',
+      }
+    });
   }
 
   start() {
-    console.log('[PlayerSelectScene] Starting player select scene...');
     this.isActive = true;
     this.container.classList.remove('hidden');
     this.remainingTime = SceneConfig.PLAYER_SELECT_WAIT / 1000;
-
-    // cache DOM elements
-    this.countdownMessage = this.container.querySelector('#countdown-message');
-    this.minPlayersMessage = this.container.querySelector('#min-players-message');
-    this.timerElement = this.container.querySelector('#countdown-timer');
 
     this.updatePlayerDisplay();
 
@@ -174,25 +178,19 @@ export default class PlayerSelectScene {
   startCountdown() {
     if (this.isCountdownRunning) return;
     
-    console.log('[PlayerSelectScene] Starting countdown');
     this.isCountdownRunning = true;
 
-    const updateTimer = () => {
-      if (!this.isActive || !this.isCountdownRunning) return;
+    const countdownContainer = this.container.querySelector('.countdown');
+    if (countdownContainer) {
+      countdownContainer.classList.add('active');
+    }
 
-      if (this.timerElement) {
-        this.timerElement.textContent = this.remainingTime;
-      }
-
-      if (this.remainingTime <= 0) {
+    if (this.countdownAnimation) {
+      this.countdownAnimation.addEventListener('complete', () => {
         this.onCountdownComplete();
-      } else {
-        this.remainingTime--;
-        this.countdownTimer = setTimeout(updateTimer, 1000);
-      }
-    };
-
-    updateTimer();
+      });
+      this.countdownAnimation.play();
+    }
   }
 
   stopCountdown() {
@@ -200,6 +198,16 @@ export default class PlayerSelectScene {
     
     console.log('[PlayerSelectScene] Stopping countdown');
     this.isCountdownRunning = false;
+    
+    const countdownContainer = this.container.querySelector('.countdown');
+    if (countdownContainer) {
+      countdownContainer.classList.remove('active');
+    }
+    
+    if (this.countdownAnimation) {
+      this.countdownAnimation.stop();
+      this.countdownAnimation.goToAndStop(0, true);
+    }
     
     if (this.countdownTimer) {
       clearTimeout(this.countdownTimer);
@@ -210,16 +218,12 @@ export default class PlayerSelectScene {
   onCountdownComplete() {
     console.log('[PlayerSelectScene] Countdown complete');
 
-    // check if we have minimum players
     const activeCount = this.playerManager.getActivePlayerCount();
     if (activeCount < PlayerConfig.MIN_PLAYERS) {
-      console.log(`[PlayerSelectScene] Not enough players (${activeCount}/${PlayerConfig.MIN_PLAYERS}), cannot start game`);
-      // reset countdown to idle
       gameEvents.emit(Events.RESET_TO_IDLE);
       return;
     }
 
-    console.log('[PlayerSelectScene] Starting game with', activeCount, 'players');
     gameEvents.emit(Events.PLAYERS_READY);
   }
 
@@ -229,7 +233,11 @@ export default class PlayerSelectScene {
 
     this.stopCountdown();
     
-    // Destroy all Lottie animations
+    if (this.countdownAnimation) {
+      this.countdownAnimation.destroy();
+      this.countdownAnimation = null;
+    }
+    
     this.avatars.forEach(avatar => {
       if (avatar) avatar.destroy();
     });
