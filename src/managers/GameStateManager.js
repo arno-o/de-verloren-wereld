@@ -21,7 +21,6 @@ export default class GameStateManager {
     if (backgroundContainer) {
       try {
         await this.backgroundManager.init(backgroundContainer);
-        console.log('[GameStateManager] Background animation loaded');
       } catch (error) {
         console.error('[GameStateManager] Failed to load background animation:', error);
       }
@@ -54,7 +53,7 @@ export default class GameStateManager {
 
     window.addEventListener('keydown', (e) => {
       if (e.key.toLowerCase() === DEV_MODE.RESET_KEY && DEV_MODE.ENABLED) {
-        console.log('[GameStateManager] DEV MODE: restarting scene');
+        console.info('[GameStateManager] DEV MODE: restarting scene');
 
         this.startDevScene(DEV_MODE.START_SCENE);
       }
