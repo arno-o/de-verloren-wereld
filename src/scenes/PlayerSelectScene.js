@@ -33,9 +33,11 @@ export default class PlayerSelectScene {
     
     this.container.innerHTML = `
       <div class="player-select-content">
-        <h2>De Verloren Wereld</h2>
-        <p class="instructions">Ga op een veld staan om mee te spelen</p>
-        
+        <div class="player-select-title">
+          <h2>De Verloren Wereld</h2>
+          <p>2-4 spelers</p>
+        </div>
+      
         <div class="player-avatars">
           ${Array.from({ length: PlayerConfig.MAX_PLAYERS }, (_, i) => `
             <div class="avatar-slot" data-player="${i + 1}">
