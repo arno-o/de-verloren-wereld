@@ -1,5 +1,6 @@
 import { SceneConfig, AvatarColors, PlayerConfig } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
+import Lottie from 'lottie-web';
 
 export default class PlayerSelectScene {
   constructor(container, playerManager) {
@@ -17,6 +18,8 @@ export default class PlayerSelectScene {
     this.countdownMessage = null;
     this.minPlayersMessage = null;
     this.timerElement = null;
+    this.avatars = [];
+    this.avatarStates = []; // Track current state of each avatar
   }
 
   init() {
@@ -35,7 +38,7 @@ export default class PlayerSelectScene {
         <div class="player-avatars">
           ${Array.from({ length: PlayerConfig.MAX_PLAYERS }, (_, i) => `
             <div class="avatar-slot" data-player="${i + 1}">
-              <div class="avatar empty"></div>
+              <div class="avatar empty" id="player-${i}"></div>
               <span>Speler ${i + 1}</span>
             </div>
           `).join('')}
@@ -47,6 +50,41 @@ export default class PlayerSelectScene {
         </div>
       </div>
     `;
+
+    // Now that the DOM elements exist, initialize the Lottie animations
+    const avatarTypes = ['water', 'fire', 'earth', 'air'];
+    
+    // Animation segments (in frames, 25fps)
+    this.segments = {
+      active: [0, 250],           // 0-10 seconds
+      toInactive: [250, 275],     // 10-11 seconds
+      inactive: [275, 350],       // 11-14 seconds
+      toActive: [350, 375]        // 14-15 seconds
+    };
+    
+    for (let i = 0; i < PlayerConfig.MAX_PLAYERS; i++) {
+      const playerContainer = document.querySelector(`#player-${i}`);
+      const avatarType = avatarTypes[i % avatarTypes.length];
+      
+      const animation = Lottie.loadAnimation({
+        container: playerContainer,
+        renderer: 'svg',
+        loop: false,
+        autoplay: false,
+        path: `./assets/avatars/avatar_${avatarType}.json`,
+        rendererSettings: {
+          preserveAspectRatio: 'xMidYMid slice',
+        }
+      });
+      
+      // Start in inactive state
+      animation.addEventListener('DOMLoaded', () => {
+        animation.goToAndStop(this.segments.inactive[0], true);
+      });
+      
+      this.avatars.push(animation);
+      this.avatarStates.push('inactive'); // Initialize state tracking
+    }
   }
 
   start() {
@@ -77,13 +115,37 @@ export default class PlayerSelectScene {
 
     for (let i = 1; i <= PlayerConfig.MAX_PLAYERS; i++) {
       const slot = this.container.querySelector(`[data-player="${i}"] .avatar`);
+      const avatarIndex = i - 1;
+      const animation = this.avatars[avatarIndex];
+      const currentState = this.avatarStates[avatarIndex];
+      
       if (activePlayers.includes(i)) {
         slot.classList.remove('empty');
-        slot.classList.add('active');
+        if (animation && currentState !== 'active') {
+          // Only transition if not already active
+          this.avatarStates[avatarIndex] = 'active';
+          animation.removeEventListener('complete');
+          animation.addEventListener('complete', () => {
+            animation.playSegments(this.segments.active, true);
+            animation.loop = true;
+          });
+          animation.loop = false;
+          animation.playSegments(this.segments.toActive, true);
+        }
         slot.style.backgroundColor = AvatarColors[i - 1];
       } else {
         slot.classList.add('empty');
-        slot.classList.remove('active');
+        if (animation && currentState !== 'inactive') {
+          // Only transition if not already inactive
+          this.avatarStates[avatarIndex] = 'inactive';
+          animation.removeEventListener('complete');
+          animation.addEventListener('complete', () => {
+            animation.playSegments(this.segments.inactive, true);
+            animation.loop = true;
+          });
+          animation.loop = false;
+          animation.playSegments(this.segments.toInactive, true);
+        }
         slot.style.backgroundColor = '';
       }
     }
@@ -166,6 +228,12 @@ export default class PlayerSelectScene {
     this.isActive = false;
 
     this.stopCountdown();
+    
+    // Destroy all Lottie animations
+    this.avatars.forEach(avatar => {
+      if (avatar) avatar.destroy();
+    });
+    this.avatars = [];
 
     if (this.playerJoinListener) {
       gameEvents.off(Events.PLAYER_JOIN, this.playerJoinListener);

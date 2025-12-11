@@ -14,8 +14,6 @@ class BackgroundManager {
     this.container = container;
 
     return new Promise((resolve, reject) => {
-      console.log('[BackgroundManager] Loading animation...');
-
       this.animation = lottie.loadAnimation({
         container: this.container,
         renderer: 'canvas',
@@ -29,9 +27,6 @@ class BackgroundManager {
       });
 
       this.animation.addEventListener('DOMLoaded', () => {
-        console.log('[BackgroundManager] Animation loaded successfully');
-        console.log(`[BackgroundManager] Total frames: ${this.animation.totalFrames}`);
-        console.log(`[BackgroundManager] Duration: ${this.animation.totalFrames / BackgroundConfig.FPS}s`);
         this.isLoaded = true;
         resolve();
       });
@@ -49,18 +44,10 @@ class BackgroundManager {
    * @param {Function} onComplete - Optional callback when non-looping segment completes
    */
   setSegment(segmentName, onComplete = null) {
-    if (!this.isLoaded) {
-      console.warn('[BackgroundManager] Animation not loaded yet');
-      return;
-    }
+    if (!this.isLoaded) { return; }
 
     const config = BackgroundConfig.SEGMENTS[segmentName];
-    if (!config) {
-      console.error(`[BackgroundManager] Unknown segment: ${segmentName}`);
-      return;
-    }
-
-    console.log(`[BackgroundManager] Setting segment: ${segmentName} (frames ${config.startFrame}-${config.endFrame}, loop: ${config.loop})`);
+    if (!config) { return; }
     
     this.currentSegment = segmentName;
 
@@ -69,9 +56,7 @@ class BackgroundManager {
       this.completeHandler = null;
     }
 
-    this.completeHandler = () => {
-      console.log(`[BackgroundManager] Segment ${segmentName} completed`);
-      
+    this.completeHandler = () => {      
       if (config.loop) {
         this.animation.playSegments([config.startFrame, config.endFrame], true);
       } else {
