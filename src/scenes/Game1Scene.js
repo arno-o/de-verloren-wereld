@@ -1,4 +1,5 @@
-import { AvatarColors } from '../utils/constants.js';
+import Lottie from 'lottie-web';
+import { AvatarBackgrounds } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class Game1Scene {
@@ -22,6 +23,9 @@ export default class Game1Scene {
     this.maxFails = 3;
     this.sequenceLength = 4;
     
+    // Heart animations
+    this.heartAnimations = [];
+    
     // Event listeners
     this.playerActiveListener = null;
   }
@@ -34,25 +38,25 @@ export default class Game1Scene {
   setupHTML() {
     this.container.innerHTML = `
       <div class="game1-content">
-        <h2>Spel 1 - Geheugen Spel</h2>
-        <div class="game-area">
-          <div class="code-wrapper" id="player-blocks-container">
-            <!-- Player blocks will be generated dynamically -->
+        <div class="game1-title">
+          <p>De Verloren Wereld</p>
+          <div class="hearts-container"></div>
+        </div>
+        <div class="game1-container">
+          <div class="game1-timer-container">
+            <div class="game1-timer-tooltip"></div>
+            <div class="game1-timer-animation"></div>
           </div>
+          <div id="player-blocks-container"></div>
         </div>
-        <div class="game-info">
-          <p class="round-info">Pogingen over: <span class="attempts-left">3</span></p>
-          <p class="instruction">Onthoud de volgorde...</p>
-        </div>
-        <div class="pause-overlay hidden">
-          <p>Wachten op speler...</p>
+        <div class="game1-footer">
+          <div class="game1-footer-avatars"></div>
         </div>
       </div>
     `;
   }
 
   start() {
-    console.log('[Game1Scene] Starting game 1...');
     this.isActive = true;
     this.isPaused = false;
     this.container.classList.remove('hidden');
@@ -63,6 +67,9 @@ export default class Game1Scene {
     
     // generate player blocks
     this.generatePlayerBlocks();
+    
+    // setup hearts
+    this.setupHearts();
     
     this.pauseListener = () => this.handlePause();
     this.resumeListener = () => this.handleResume();
@@ -79,32 +86,91 @@ export default class Game1Scene {
   generatePlayerBlocks() {
     const container = this.container.querySelector('#player-blocks-container');
     container.innerHTML = '';
-    
-    // Always create 4 blocks (for all 4 possible players)
+
     for (let playerId = 1; playerId <= 4; playerId++) {
       const block = document.createElement('div');
       block.className = 'code-block';
       block.dataset.playerId = playerId;
-      block.innerHTML = `<span class="player-label">Speler ${playerId}</span>`;
+      block.style.backgroundColor = AvatarBackgrounds[playerId - 1];
+      block.innerHTML = `
+        <img src="../assets/images/avatar_${playerId}.png" />
+      `
       container.appendChild(block);
     }
-    
+
     this.playerBlocks = Array.from(container.querySelectorAll('.code-block'));
   }
+
+  setupHearts() {
+    const heartsContainer = this.container.querySelector('.hearts-container');
+    heartsContainer.innerHTML = '';
+    this.heartAnimations = [];
+    
+    for (let i = 0; i < this.maxFails; i++) {
+      const heartDiv = document.createElement('div');
+      heartDiv.className = 'heart-item';
+      heartsContainer.appendChild(heartDiv);
+      
+      const heartAnimation = Lottie.loadAnimation({
+        container: heartDiv,
+        renderer: 'svg',
+        loop: false,
+        autoplay: false,
+        path: './assets/ui/heart.json',
+        rendererSettings: {
+          preserveAspectRatio: 'xMidYMid slice',
+        }
+      });
+      
+      // Start on first frame (unbroken heart)
+      heartAnimation.goToAndStop(0, true);
+      
+      this.heartAnimations.push(heartAnimation);
+    }
+  } 
 
   startGameLogic() {
     this.failCount = 0;
     this.updateAttemptsDisplay();
     
-    this.startNewSequence();
+    this.startCountdown("Onthoud de volgorde!");
+  }
+
+  startCountdown(tooltip = "Ben je er klaar voor?") {
+    const game1CountdownTooltip = document.querySelector(".game1-timer-tooltip");
+    const game1CountdownContainer = document.querySelector(".game1-timer-container");
+    const game1PlayerBlocksContainer = document.querySelector("#player-blocks-container");
+    const game1CountdownAnimationContainer = document.querySelector(".game1-timer-animation");
+    
+    let game1CountdownAnimation = Lottie.loadAnimation({
+      container: game1CountdownAnimationContainer,
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      path: `./assets/animations/countdown_3.json`,
+      rendererSettings: {
+        preserveAspectRatio: 'xMidYMid slice',
+      }
+    });
+
+    game1CountdownTooltip.innerHTML = tooltip;
+    game1CountdownAnimation.play();
+    game1CountdownContainer.classList.add('active');
+
+    game1CountdownAnimation.addEventListener('complete', async () => {
+      game1CountdownContainer.classList.remove('active');
+      await this.delay(100);
+      this.revealPlayerBlocks();
+      await this.delay(100);
+      game1CountdownAnimation.destroy();
+      this.startNewSequence();
+    })
   }
 
   startNewSequence() {
     this.sequence = this.generateSequence();
     this.playerInput = [];
-    
-    console.log('[Game1Scene] Generated sequence:', this.sequence);
-    
+        
     setTimeout(() => {
       this.showSequence();
     }, 1000);
@@ -113,15 +179,35 @@ export default class Game1Scene {
   generateSequence() {
     const sequence = [];
     for (let i = 0; i < this.sequenceLength; i++) {
-      sequence.push(Math.floor(Math.random() * 4) + 1);
+      let newNumber;
+      do {
+        newNumber = Math.floor(Math.random() * 4) + 1;
+      } while (i > 0 && newNumber === sequence[i - 1]);
+      sequence.push(newNumber);
     }
+    console.log(sequence);
     return sequence;
+  }
+
+  async hidePlayerBlocks() {
+    for (let i = 0; i < this.playerBlocks.length; i++) {
+      const block = this.playerBlocks[i];
+      block.classList.remove('visible');
+      await this.delay(100); // Stagger delay between each block
+    }
+  }
+
+  async revealPlayerBlocks() {
+    for (let i = 0; i < this.playerBlocks.length; i++) {
+      const block = this.playerBlocks[i];
+      block.classList.add('visible');
+      await this.delay(100); // Stagger delay between each block
+    }
   }
 
   async showSequence() {
     this.isShowingSequence = true;
     this.isAcceptingInput = false;
-    this.updateInstruction('Onthoud de volgorde...');
     
     for (let i = 0; i < this.sequence.length; i++) {
       if (this.isPaused) return;
@@ -134,7 +220,6 @@ export default class Game1Scene {
     this.isShowingSequence = false;
     this.isAcceptingInput = true;
     this.playerInput = [];
-    this.updateInstruction('Stap op jullie velden in de juiste volgorde!');
   }
 
   async activatePlayerBlock(playerId) {
@@ -146,6 +231,9 @@ export default class Game1Scene {
     }
   }
 
+  /**
+  * @param ms - Duration of delay (in ms)
+  */
   delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -153,12 +241,10 @@ export default class Game1Scene {
   handlePlateActivation(playerId) {
     if (!this.isAcceptingInput || this.isPaused || !this.isActive) return;
     
-    // accept input from any plate (1-4)
     if (playerId < 1 || playerId > 4) return;
     
     console.log(`[Game1Scene] Player ${playerId} stepped on plate`);
     
-    // visual feedback
     const block = this.playerBlocks.find(b => parseInt(b.dataset.playerId) === playerId);
     if (block) {
       block.classList.add('active');
@@ -167,53 +253,53 @@ export default class Game1Scene {
       }, 300);
     }
     
-    // add to player input
     this.playerInput.push(playerId);
     
-    // check if input is correct so far
     const currentIndex = this.playerInput.length - 1;
     if (this.playerInput[currentIndex] !== this.sequence[currentIndex]) {
-      // wrong input
       this.handleWrongInput();
       return;
     }
     
-    // check if sequence is complete
     if (this.playerInput.length === this.sequence.length) {
       this.handleSequenceComplete();
     }
   }
 
   handleWrongInput() {
-    console.log('[Game1Scene] Wrong input!');
     this.isAcceptingInput = false;
     this.failCount++;
+    this.playHeartAnimation(this.failCount - 1);
     this.updateAttemptsDisplay();
     
     this.playerBlocks.forEach(block => block.classList.add('error'));
     
     setTimeout(() => {
       this.playerBlocks.forEach(block => block.classList.remove('error'));
+      this.hidePlayerBlocks();
       
       if (this.failCount >= this.maxFails) {
-        this.updateInstruction('Te veel fouten! Door naar het volgende spel...');
         setTimeout(() => {
           this.onGameComplete();
         }, 1500);
       } else {
-        this.updateInstruction(`Fout! Nog ${this.maxFails - this.failCount} poging(en) over...`);
         setTimeout(() => {
-          this.startNewSequence();
+          this.startCountdown("Oei! Probeer nog eens");
         }, 1000);
       }
     }, 800);
   }
 
+  playHeartAnimation(index) {
+    if (index >= 0 && index < this.heartAnimations.length) {
+      const heart = this.heartAnimations[index];
+      heart.goToAndPlay(0, true);
+    }
+  }
+
   handleSequenceComplete() {
-    console.log('[Game1Scene] Sequence complete!');
     this.isAcceptingInput = false;
     
-    this.updateInstruction('Gelukt! 🎉');
     setTimeout(() => {
       this.onGameComplete();
     }, 1500);
@@ -223,13 +309,6 @@ export default class Game1Scene {
     const attemptsLeft = this.container.querySelector('.attempts-left');
     if (attemptsLeft) {
       attemptsLeft.textContent = this.maxFails - this.failCount;
-    }
-  }
-
-  updateInstruction(text) {
-    const instruction = this.container.querySelector('.instruction');
-    if (instruction) {
-      instruction.textContent = text;
     }
   }
 
