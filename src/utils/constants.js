@@ -1,6 +1,6 @@
 export const DEV_MODE = {
-  ENABLED: false,
-  START_SCENE: 'game2', // options: null, 'idle', 'player-select', 'intro', 'game1', 'game2', 'outro'
+  ENABLED: true,
+  START_SCENE: 'game1', // options: null, 'idle', 'player-select', 'intro', 'game1', 'game2', 'outro'
   MOCK_PLAYERS: 2,
   RESET_KEY: 'm'
 };
@@ -106,3 +106,10 @@ export const AvatarColors = [
   '#6BA743',
   '#7575dfff'
 ];
+
+export const AvatarBackgrounds = [
+  '#123779',
+  '#FEC035',
+  '#A3CA99',
+  '#D298C4'
+]

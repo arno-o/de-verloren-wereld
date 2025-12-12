@@ -51,8 +51,6 @@ export default class GameStateManager {
 
     window.addEventListener('keydown', (e) => {
       if (e.key.toLowerCase() === DEV_MODE.RESET_KEY && DEV_MODE.ENABLED) {
-        console.info('[GameStateManager] DEV MODE: restarting scene');
-
         this.startDevScene(DEV_MODE.START_SCENE);
       }
     });
@@ -114,6 +112,8 @@ export default class GameStateManager {
     await this.init();
 
     if (DEV_MODE.ENABLED && DEV_MODE.START_SCENE !== 'idle') {
+      // Initialize idle scene as current so it gets cleaned up properly
+      this.sceneManager.currentScene = this.sceneManager.getScene('idle');
       this.startDevScene(DEV_MODE.START_SCENE);
     } else {
       this.setState(GameStates.IDLE);
@@ -125,8 +125,6 @@ export default class GameStateManager {
   }
 
   startDevScene(sceneName) {
-    console.log(`[GameStateManager] DEV MODE: jumping to ${sceneName}`);
-
     switch (sceneName) {
       case 'player-select':
         this.startPlayerSelect();
@@ -137,18 +135,15 @@ export default class GameStateManager {
         break;
       case 'game1':
         this.startGame1();
-        this.backgroundManager.setSegment('GAME');
         break;
       case 'game2':
         this.startGame2();
-        this.backgroundManager.setSegment('GAME');
         break;
       case 'outro':
         this.startOutro();
-        this.backgroundManager.setSegment('GAME');
         break;
       default:
-        console.warn(`[GameStateManager] DEV MODE: unknown scene "${sceneName}", starting at idle`);
+        console.warn(`[DEV-GameStateManager] unknown scene "${sceneName}"`);
         this.setState(GameStates.IDLE);
         this.sceneManager.switchScene('idle');
         this.backgroundManager.setSegment('IDLE');

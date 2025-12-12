@@ -5,7 +5,6 @@ export default class IdleScene {
   }
 
   init() {
-    console.log('[IdleScene] Initializing...');
     this.setupHTML();
   }
 
@@ -15,7 +14,6 @@ export default class IdleScene {
         <h1>De Verloren Wereld</h1>
         <p class="subtitle">Stap op een veld om te beginnen</p>
         <div class="attract-animation">
-          <!-- Add your attract mode visuals here -->
           <div class="pulse-indicator"></div>
         </div>
       </div>

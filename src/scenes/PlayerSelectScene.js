@@ -13,7 +13,7 @@ export default class PlayerSelectScene {
     this.playerLeaveListener = null;
     this.playerInactiveListener = null;
     this.remainingTime = 0;
-    
+
     // cached DOM elements
     this.countdownMessage = null;
     this.minPlayersMessage = null;
@@ -29,8 +29,6 @@ export default class PlayerSelectScene {
   }
 
   setupHTML() {
-    const initialTime = SceneConfig.PLAYER_SELECT_WAIT / 1000;
-    
     this.container.innerHTML = `
       <div class="player-select-content">
         <div class="player-select-title">
@@ -51,21 +49,19 @@ export default class PlayerSelectScene {
       </div>
     `;
 
-    // Now that the DOM elements exist, initialize the Lottie animations
     const avatarTypes = ['water', 'fire', 'earth', 'air'];
-    
-    // Animation segments (in frames, 25fps)
+
     this.segments = {
       active: [0, 250],           // 0-10 seconds
       toInactive: [250, 275],     // 10-11 seconds
       inactive: [275, 350],       // 11-14 seconds
       toActive: [350, 375]        // 14-15 seconds
     };
-    
+
     for (let i = 0; i < PlayerConfig.MAX_PLAYERS; i++) {
       const playerContainer = document.querySelector(`#player-${i}`);
       const avatarType = avatarTypes[i % avatarTypes.length];
-      
+
       const animation = Lottie.loadAnimation({
         container: playerContainer,
         renderer: 'svg',
@@ -76,14 +72,13 @@ export default class PlayerSelectScene {
           preserveAspectRatio: 'xMidYMid slice',
         }
       });
-      
-      // Start in inactive state
+
       animation.addEventListener('DOMLoaded', () => {
         animation.goToAndStop(this.segments.inactive[0], true);
       });
-      
+
       this.avatars.push(animation);
-      this.avatarStates.push('inactive'); // Initialize state tracking
+      this.avatarStates.push('inactive');
     }
 
     const countdownContainer = document.querySelector(".countdown");
@@ -92,7 +87,7 @@ export default class PlayerSelectScene {
       renderer: 'svg',
       loop: false,
       autoplay: false,
-      path: `./assets/animations/countdown.json`,
+      path: `./assets/animations/countdown_15.json`,
       rendererSettings: {
         preserveAspectRatio: 'xMidYMid slice',
       }
@@ -124,7 +119,7 @@ export default class PlayerSelectScene {
       const avatarIndex = i - 1;
       const animation = this.avatars[avatarIndex];
       const currentState = this.avatarStates[avatarIndex];
-      
+
       if (activePlayers.includes(i)) {
         slot.classList.remove('empty');
         if (animation && currentState !== 'active') {
@@ -162,13 +157,13 @@ export default class PlayerSelectScene {
   checkMinimumPlayers() {
     const activeCount = this.playerManager.getActivePlayerCount();
 
-    if (activeCount < PlayerConfig.MIN_PLAYERS) {     // below minimum
+    if (activeCount < PlayerConfig.MIN_PLAYERS) {
       this.stopCountdown();
       this.remainingTime = SceneConfig.PLAYER_SELECT_WAIT / 1000;
       if (this.timerElement) this.timerElement.textContent = this.remainingTime;
       this.countdownMessage?.classList.add('hidden');
       this.minPlayersMessage?.classList.remove('hidden');
-    } else {                                          // reached minimum
+    } else {
       if (!this.isCountdownRunning) {
         this.startCountdown();
       }
@@ -179,7 +174,7 @@ export default class PlayerSelectScene {
 
   startCountdown() {
     if (this.isCountdownRunning) return;
-    
+
     this.isCountdownRunning = true;
 
     const countdownContainer = this.container.querySelector('.countdown');
@@ -188,6 +183,12 @@ export default class PlayerSelectScene {
     }
 
     if (this.countdownAnimation) {
+
+      // press "S" to skip the countdown
+      document.addEventListener('keydown', (event) => {
+        if (event.key == "s") { this.onCountdownComplete(); }
+      })
+
       this.countdownAnimation.addEventListener('complete', () => {
         this.onCountdownComplete();
       });
@@ -197,20 +198,20 @@ export default class PlayerSelectScene {
 
   stopCountdown() {
     if (!this.isCountdownRunning) return;
-    
+
     console.log('[PlayerSelectScene] Stopping countdown');
     this.isCountdownRunning = false;
-    
+
     const countdownContainer = this.container.querySelector('.countdown');
     if (countdownContainer) {
       countdownContainer.classList.remove('active');
     }
-    
+
     if (this.countdownAnimation) {
       this.countdownAnimation.stop();
       this.countdownAnimation.goToAndStop(0, true);
     }
-    
+
     if (this.countdownTimer) {
       clearTimeout(this.countdownTimer);
       this.countdownTimer = null;
@@ -218,8 +219,6 @@ export default class PlayerSelectScene {
   }
 
   onCountdownComplete() {
-    console.log('[PlayerSelectScene] Countdown complete');
-
     const activeCount = this.playerManager.getActivePlayerCount();
     if (activeCount < PlayerConfig.MIN_PLAYERS) {
       gameEvents.emit(Events.RESET_TO_IDLE);
@@ -234,12 +233,12 @@ export default class PlayerSelectScene {
     this.isActive = false;
 
     this.stopCountdown();
-    
+
     if (this.countdownAnimation) {
       this.countdownAnimation.destroy();
       this.countdownAnimation = null;
     }
-    
+
     this.avatars.forEach(avatar => {
       if (avatar) avatar.destroy();
     });
