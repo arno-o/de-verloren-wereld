@@ -15,8 +15,6 @@ export default class GameStateManager {
   }
 
   async init() {
-    console.log('[GameStateManager] Initializing...');
-
     const backgroundContainer = document.getElementById('background-container');
     if (backgroundContainer) {
       try {
@@ -175,13 +173,11 @@ export default class GameStateManager {
 
       setTimeout(() => {
         this.backgroundManager.setSegment('PROCESS_DOWN', () => {
-          this.backgroundManager.setSegment(
-            'TRANSITION_START',
-            this.backgroundManager.setSegment(
-              'GAME', this.sceneManager.switchScene('game1')
-            )
-          );
-          this.setState(GameStates.GAME_1);
+          this.backgroundManager.setSegment('TRANSITION_START', () => {
+            this.backgroundManager.setSegment('GAME');
+            this.sceneManager.switchScene('game1');
+            this.setState(GameStates.GAME_1);
+          });
         });
       }, SceneConfig.PROCESS_HOLD_DURATION);
     });
@@ -189,6 +185,7 @@ export default class GameStateManager {
 
   startGame1() {
     console.log('[GameStateManager] Starting Game 1...');
+    this.backgroundManager.setSegment('GAME');
     this.setState(GameStates.GAME_1);
     this.sceneManager.switchScene('game1');
   }
@@ -210,13 +207,10 @@ export default class GameStateManager {
       setTimeout(() => {
         console.log('[GameStateManager] Hold complete, playing process down...');
         this.backgroundManager.setSegment('PROCESS_DOWN', () => {
-          this.backgroundManager.setSegment(
-            'TRANSITION_START',
-            this.backgroundManager.setSegment(
-              'GAME', this.sceneManager.switchScene('game2')
-            )
-          );
-          this.setState(GameStates.GAME_1);
+          this.backgroundManager.setSegment('TRANSITION_START', () => {
+            this.backgroundManager.setSegment('GAME');
+            this.sceneManager.switchScene('game2');
+          });
         });
       }, SceneConfig.PROCESS_HOLD_DURATION);
     });
