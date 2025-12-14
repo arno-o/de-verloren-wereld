@@ -1,5 +1,5 @@
 export const DEV_MODE = {
-  ENABLED: true,
+  ENABLED: false,
   START_SCENE: 'game1', // options: null, 'idle', 'player-select', 'intro', 'game1', 'game2', 'outro'
   MOCK_PLAYERS: 2,
   RESET_KEY: 'm'

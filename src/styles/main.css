@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Sigmar+One:wght@400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
 
 * {
   margin: 0;
@@ -57,34 +58,71 @@ body {
 
 /* Idle Scene Styles */
 .idle-content {
-  text-align: center;
-  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
 }
 
-.idle-content h1 {
-  font-size: 4rem;
-  margin-bottom: 2rem;
-  animation: pulse 2s ease-in-out infinite;
+.idle-header {
+  padding: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 
-.idle-content p {
-  font-size: 1.5rem;
-  opacity: 0.8;
+.idle-header-item {
+  color: #1a1a1a;
+  font-weight: 600;
+  font-family: Poppins;
+
+  padding: 10px 20px;
+  border-radius: 15px;
+  background-color: #5CAAC9;
 }
 
-.attract-animation {
-  margin-top: 3rem;
-  width: 300px;
-  height: 300px;
+.idle-title {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 2rem;
+  flex: 1;
+  justify-content: center;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
+.idle-title-image {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.idle-title-image > img {
+  width: 95%;
+  max-width: 1200px;
+  height: auto;
+}
+
+.idle-title-instruction {
+  color: #1a1a1a;
+  font-weight: 600;
+  width: fit-content;
+  font-family: Poppins;
+  font-size: 1.8rem;
+
+  padding: 15px 30px;
+  border-radius: 20px;
+  background-color: #C891BB;
+}
+
+.idle-arrows {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.idle-arrow-slot {
+  width: 200px;
+  height: 250px;
 }
 
 /* Player Select Scene Styles */
