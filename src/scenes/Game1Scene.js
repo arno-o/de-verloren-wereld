@@ -26,6 +26,10 @@ export default class Game1Scene {
     // Heart animations
     this.heartAnimations = [];
     
+    // Audio
+    this.audioContext = null;
+    this.errorSoundBuffer = null;
+    
     // Event listeners
     this.playerActiveListener = null;
   }
@@ -33,10 +37,12 @@ export default class Game1Scene {
   init() {
     console.log('[Game1Scene] Initializing...');
     this.setupHTML();
+    this.initializeAudio();
   }
 
   setupHTML() {
     this.container.innerHTML = `
+      <div class="error-flash-overlay"></div>
       <div class="game1-content">
         <div class="game1-title">
           <p>De Verloren Wereld</p>
@@ -54,6 +60,48 @@ export default class Game1Scene {
         </div>
       </div>
     `;
+  }
+
+  async initializeAudio() {
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Load error sound
+      const response = await fetch('./assets/audio/errors/memory.wav');
+      const arrayBuffer = await response.arrayBuffer();
+      this.errorSoundBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      
+      console.log('[Game1Scene] Audio initialized successfully');
+    } catch (error) {
+      console.error('[Game1Scene] Failed to initialize audio:', error);
+    }
+  }
+
+  playErrorSound() {
+    if (!this.audioContext || !this.errorSoundBuffer) {
+      console.warn('[Game1Scene] Audio not ready');
+      return;
+    }
+
+    try {
+      const source = this.audioContext.createBufferSource();
+      source.buffer = this.errorSoundBuffer;
+      source.connect(this.audioContext.destination);
+      source.start(0);
+    } catch (error) {
+      console.error('[Game1Scene] Failed to play error sound:', error);
+    }
+  }
+
+  triggerErrorFlash() {
+    const overlay = this.container.querySelector('.error-flash-overlay');
+    if (!overlay) return;
+    
+    overlay.classList.add('active');
+    
+    setTimeout(() => {
+      overlay.classList.remove('active');
+    }, 600);
   }
 
   start() {
@@ -270,6 +318,8 @@ export default class Game1Scene {
     this.isAcceptingInput = false;
     this.failCount++;
     this.playHeartAnimation(this.failCount - 1);
+    this.playErrorSound();
+    this.triggerErrorFlash();
     this.updateAttemptsDisplay();
     
     this.playerBlocks.forEach(block => block.classList.add('error'));

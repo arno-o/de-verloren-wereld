@@ -9,8 +9,11 @@ export default class PlayerManager {
     this.isListening = false;
     this.initialPlayers = new Set(); // players who started the game
     this.gameStarted = false; // track if game has started
+    this.audioContext = null;
+    this.audioBuffers = new Map();
     
     this.initializePlayers();
+    this.initializeAudio();
   }
 
   initializePlayers() {
@@ -27,10 +30,37 @@ export default class PlayerManager {
     });
   }
 
+  async initializeAudio() {
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+      for (let i = 1; i <= 4; i++) {
+        const response = await fetch(`./assets/audio/pads/sound${i}.wav`);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+        this.audioBuffers.set(i, audioBuffer);
+      }
+    } catch (error) {
+      console.error('[PlayerManager] Failed to initialize audio:', error);
+    }
+  }
+
+  playPlayerSound(playerId) {
+    if (!this.audioContext || !this.audioBuffers.has(playerId)) { return; }
+
+    try {
+      const source = this.audioContext.createBufferSource();
+      source.buffer = this.audioBuffers.get(playerId);
+      source.connect(this.audioContext.destination);
+      source.start(0);
+    } catch (error) {
+      console.error(`[PlayerManager] Failed to play sound for player ${playerId}:`, error);
+    }
+  }
+
   startListening() {
     if (this.isListening) return;
     
-    console.log('[PlayerManager] Starting to listen for plate inputs...');
     this.isListening = true;
     
     window.addEventListener('keydown', this.handleKeyDown);
@@ -63,10 +93,10 @@ export default class PlayerManager {
     
     this.keyStates.set(key, true);
     
-    // set timer for plate activation threshold
     const timer = setTimeout(() => {
       this.activatePlayer(player.id);
     }, PlayerConfig.PLATE_HOLD_THRESHOLD);
+    this.playPlayerSound(player.id);
     
     this.keyTimers.set(key, timer);
   }

@@ -1,3 +1,4 @@
+import Lottie from 'lottie-web';
 import { AvatarColors } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
 
@@ -15,56 +16,90 @@ export default class Game2Scene {
     // game state
     this.remainingLives = 3;
     this.totalBlocksCleared = 0;
-    this.totalBlocksToSpawn = 12;
+    this.totalBlocksToSpawn = 25;
     this.animationFrame = null;
     this.lastFrameTime = 0;
     this.upcomingBlockColorQueue = [];
     this.currentlyFallingBlocks = [];
     this.gameAreaHeight = 0;
     this.lastSpawnedBlockColorId = null;
+    
+    // Heart animations
+    this.heartAnimations = [];
+    
+    // Audio
+    this.audioContext = null;
+    this.errorSoundBuffer = null;
   }
 
   init() {
     console.log('[Game2Scene] Initializing...');
-    this.createGameHTML();
+    this.setupHTML();
+    this.initializeAudio();
   }
 
-  createGameHTML() {
+  setupHTML() {
     this.container.innerHTML = `
+      <div class="error-flash-overlay"></div>
+
       <div class="game2-content">
-        <h2>Spel 2 - Vallende Blokken</h2>
-        <div class="game-stats">
-          <div class="stat">
-            <span class="stat-label">levens:</span>
-            <span class="stat-value lives-count">3</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">blokken:</span>
-            <span class="stat-value blocks-count">0/12</span>
-          </div>
+        <div class="game2-title">
+          <p>De Verloren Wereld</p>
+          <div class="hearts-container"></div>
         </div>
-        <div class="game-area" id="tetris-area">
-          <div class="blocks-container" id="blocks-container"></div>
+        <div class="game2-container">
+          <div class="game2-timer-container">
+            <div class="game2-timer-tooltip"></div>
+            <div class="game2-timer-animation"></div>
+          </div>
+          <div id="blocks-container"></div>
         </div>
-        <div class="player-indicators">
-          <div class="indicator player-1" data-player="1">
-            <span>speler 1</span>
-          </div>
-          <div class="indicator player-2" data-player="2">
-            <span>speler 2</span>
-          </div>
-          <div class="indicator player-3" data-player="3">
-            <span>speler 3</span>
-          </div>
-          <div class="indicator player-4" data-player="4">
-            <span>speler 4</span>
-          </div>
-        </div>
-        <div class="pause-overlay hidden">
-          <p>wachten op speler...</p>
+        <div class="game2-footer">
+          <div class="game2-footer-avatars"></div>
         </div>
       </div>
     `;
+  }
+
+  async initializeAudio() {
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+      const response = await fetch('./assets/audio/errors/tetris.wav');
+      const arrayBuffer = await response.arrayBuffer();
+      this.errorSoundBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+
+      console.log('[Game2Scene] Audio initialized successfully');
+    } catch (error) {
+      console.error('[Game2Scene] Failed to initialize audio:', error);
+    }
+  }
+
+  playErrorSound() {
+    if (!this.audioContext || !this.errorSoundBuffer) {
+      console.warn('[Game2Scene] Audio not ready');
+      return;
+    }
+
+    try {
+      const source = this.audioContext.createBufferSource();
+      source.buffer = this.errorSoundBuffer;
+      source.connect(this.audioContext.destination);
+      source.start(0);
+    } catch (error) {
+      console.error('[Game2Scene] Failed to play error sound:', error);
+    }
+  }
+
+  triggerErrorFlash() {
+    const overlay = this.container.querySelector('.error-flash-overlay');
+    if (!overlay) return;
+
+    overlay.classList.add('active');
+
+    setTimeout(() => {
+      overlay.classList.remove('active');
+    }, 600);
   }
 
   start() {
@@ -81,11 +116,66 @@ export default class Game2Scene {
     this.playerPadActivationListener = (data) => this.handlePlayerPadActivation(data.playerId);
     gameEvents.on(Events.PLAYER_ACTIVE, this.playerPadActivationListener);
     
-    this.initializeGameState();
+    this.setupHearts();
+    this.startCountdown();
+  }
+
+  setupHearts() {
+    const heartsContainer = this.container.querySelector('.hearts-container');
+    heartsContainer.innerHTML = '';
+    this.heartAnimations = [];
+    
+    for (let i = 0; i < this.remainingLives; i++) {
+      const heartDiv = document.createElement('div');
+      heartDiv.className = 'heart-item';
+      heartsContainer.appendChild(heartDiv);
+      
+      const heartAnimation = Lottie.loadAnimation({
+        container: heartDiv,
+        renderer: 'svg',
+        loop: false,
+        autoplay: false,
+        path: './assets/ui/heart.json',
+        rendererSettings: {
+          preserveAspectRatio: 'xMidYMid slice',
+        }
+      });
+      
+      heartAnimation.goToAndStop(0, true);
+      
+      this.heartAnimations.push(heartAnimation);
+    }
+  }
+
+  startCountdown(tooltip = "Ben je er klaar voor?") {
+    const game2CountdownTooltip = document.querySelector(".game2-timer-tooltip");
+    const game2CountdownContainer = document.querySelector(".game2-timer-container");
+    const game2CountdownAnimationContainer = document.querySelector(".game2-timer-animation");
+    
+    let game2CountdownAnimation = Lottie.loadAnimation({
+      container: game2CountdownAnimationContainer,
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      path: `./assets/animations/countdown_3.json`,
+      rendererSettings: {
+        preserveAspectRatio: 'xMidYMid slice',
+      }
+    });
+
+    game2CountdownTooltip.innerHTML = tooltip;
+    game2CountdownAnimation.play();
+    game2CountdownContainer.classList.add('active');
+
+    game2CountdownAnimation.addEventListener('complete', async () => {
+      game2CountdownContainer.classList.remove('active');
+      await this.delay(100);
+      game2CountdownAnimation.destroy();
+      this.initializeGameState();
+    })
   }
 
   initializeGameState() {
-    // Reset all game state
     this.remainingLives = 3;
     this.totalBlocksCleared = 0;
     this.currentlyFallingBlocks = [];
@@ -96,22 +186,11 @@ export default class Game2Scene {
       blocksContainer.innerHTML = '';
     }
     
-    // generate sequence of block colors to spawn
     this.upcomingBlockColorQueue = this.generateRandomBlockColorSequence();
     
-    console.log('[Game2Scene] Game state initialized:', {
-      lives: this.remainingLives,
-      blocksCleared: this.totalBlocksCleared,
-      blocksToSpawn: this.totalBlocksToSpawn,
-      queueLength: this.upcomingBlockColorQueue.length
-    });
-    
-    const gameArea = this.container.querySelector('#tetris-area');
+    const gameArea = this.container.querySelector('.game2-container');
     this.gameAreaHeight = gameArea.clientHeight;
     
-    this.updateStatisticsDisplay();
-    
-    // start spawning blocks after delay
     setTimeout(() => {
       if (this.isActive) {
         this.spawnNextBlockFromQueue();
@@ -122,11 +201,12 @@ export default class Game2Scene {
 
   generateRandomBlockColorSequence() {
     const sequence = [];
-    // generate random color ids (1-4) for each block
+
     for (let i = 0; i < this.totalBlocksToSpawn; i++) {
       const randomColorId = Math.floor(Math.random() * 4) + 1;
       sequence.push(randomColorId);
     }
+
     return sequence;
   }
 
@@ -136,9 +216,7 @@ export default class Game2Scene {
     
     const blockColorId = this.upcomingBlockColorQueue.shift();
     
-    // ensure consecutive blocks have different colors when spawning simultaneously
     if (this.lastSpawnedBlockColorId === blockColorId && this.upcomingBlockColorQueue.length > 0) {
-      // put this color back and get next different one
       this.upcomingBlockColorQueue.unshift(blockColorId);
       const nextBlockColorId = this.upcomingBlockColorQueue.shift();
       this.createAndSpawnFallingBlock(nextBlockColorId);
@@ -150,16 +228,17 @@ export default class Game2Scene {
   createAndSpawnFallingBlock(blockColorId) {
     this.lastSpawnedBlockColorId = blockColorId;
     
-    const blockColor = AvatarColors[blockColorId - 1];
-    
     const blocksContainer = this.container.querySelector('#blocks-container');
     const blockElement = document.createElement('div');
-    blockElement.className = 'falling-block';
-    blockElement.style.backgroundColor = blockColor;
-    blockElement.style.borderColor = blockColor;
+    blockElement.className = 'falling-block spinning';
     blockElement.dataset.blockColorId = blockColorId;
     blockElement.style.left = `${Math.random() * 80 + 10}%`;
     blockElement.style.top = '0px';
+    
+    const avatarImg = document.createElement('img');
+    avatarImg.src = `./assets/avatars/png/avatar_${blockColorId}.png`;
+    avatarImg.alt = `avatar ${blockColorId}`;
+    blockElement.appendChild(avatarImg);
     
     blocksContainer.appendChild(blockElement);
     
@@ -177,12 +256,11 @@ export default class Game2Scene {
 
   scheduleNextBlockSpawn() {
     const baseSpawnDelay = 2500;
-    const minimumSpawnDelay = 1000;
+    const minimumSpawnDelay = 800;
     const gameProgress = this.totalBlocksCleared / this.totalBlocksToSpawn;
-    const currentSpawnDelay = Math.max(minimumSpawnDelay, baseSpawnDelay - (gameProgress * 1500));
+    const currentSpawnDelay = Math.max(minimumSpawnDelay, baseSpawnDelay - (gameProgress * 1700));
     
-    // spawn 2 blocks simultaneously near end game for difficulty
-    const shouldSpawnDoubleBlock = this.totalBlocksCleared >= 8 && Math.random() > 0.5;
+    const shouldSpawnDoubleBlock = this.totalBlocksCleared >= 15 && Math.random() > 0.6;
     
     if (this.upcomingBlockColorQueue.length > 0) {
       setTimeout(() => this.spawnNextBlockFromQueue(), currentSpawnDelay);
@@ -213,13 +291,17 @@ export default class Game2Scene {
   }
 
   updateFallingBlockPositions(deltaTime) {
-    // increase speed over time
-    const gameProgress = this.totalBlocksCleared / this.totalBlocksToSpawn;
-    const baseSpeed = 80; // pixels per second
-    const speedIncrease = gameProgress * 40;
+    const baseSpeed = 100; // pixels per second
+    let speedIncrease = 0;
+    
+    if (this.totalBlocksCleared > 15) {
+      speedIncrease = 80 + ((this.totalBlocksCleared - 15) * 10);
+    } else {
+      speedIncrease = this.totalBlocksCleared * 3;
+    }
+    
     const currentFallSpeed = baseSpeed + speedIncrease;
     
-    // convert deltaTime from milliseconds to seconds
     const deltaSeconds = deltaTime / 1000;
     
     for (let i = this.currentlyFallingBlocks.length - 1; i >= 0; i--) {
@@ -227,7 +309,6 @@ export default class Game2Scene {
       block.yPosition += currentFallSpeed * deltaSeconds;
       block.element.style.top = `${block.yPosition}px`;
       
-      // check if block reached bottom
       if (block.yPosition >= this.gameAreaHeight - 60) {
         this.handleBlockReachedBottom(block);
         this.removeFallingBlockFromGame(i);
@@ -238,14 +319,12 @@ export default class Game2Scene {
   handlePlayerPadActivation(playerId) {
     if (!this.isActive || this.isPaused) return;
     
-    // flash the player's indicator card
     const playerIndicator = this.container.querySelector(`.indicator[data-player="${playerId}"]`);
     if (playerIndicator) {
       playerIndicator.classList.add('active');
       setTimeout(() => playerIndicator.classList.remove('active'), 200);
     }
     
-    // check if any falling block matches this player's color
     let foundMatchingBlock = false;
     for (let i = this.currentlyFallingBlocks.length - 1; i >= 0; i--) {
       const block = this.currentlyFallingBlocks[i];
@@ -257,7 +336,6 @@ export default class Game2Scene {
       }
     }
     
-    // player pressed wrong color
     if (!foundMatchingBlock && this.currentlyFallingBlocks.length > 0) {
       this.decreasePlayerLife();
     }
@@ -266,9 +344,7 @@ export default class Game2Scene {
   handleBlockClearedByPlayer(block) {
     block.element.classList.add('cleared');
     this.totalBlocksCleared++;
-    this.updateStatisticsDisplay();
     
-    // check if all blocks have been cleared
     if (this.totalBlocksCleared >= this.totalBlocksToSpawn && this.currentlyFallingBlocks.length <= 1) {
       setTimeout(() => this.handleGameComplete(), 500);
     }
@@ -281,8 +357,10 @@ export default class Game2Scene {
 
   removeFallingBlockFromGame(blockIndex) {
     const block = this.currentlyFallingBlocks[blockIndex];
+    if (!block) return; // Guard clause to prevent undefined access
+    
     setTimeout(() => {
-      if (block.element.parentNode) {
+      if (block.element && block.element.parentNode) {
         block.element.parentNode.removeChild(block.element);
       }
     }, 300);
@@ -291,29 +369,23 @@ export default class Game2Scene {
 
   decreasePlayerLife() {
     this.remainingLives--;
-    this.updateStatisticsDisplay();
+    this.playErrorSound();
+    this.triggerErrorFlash();
     
-    // flash screen red as damage feedback
-    const gameArea = this.container.querySelector('#tetris-area');
-    gameArea.classList.add('damage');
-    setTimeout(() => gameArea.classList.remove('damage'), 300);
+    const heartIndex = this.heartAnimations.length - this.remainingLives - 1;
+    if (heartIndex >= 0 && heartIndex < this.heartAnimations.length) {
+      const heartAnimation = this.heartAnimations[heartIndex];
+      heartAnimation.setDirection(1);
+      heartAnimation.play();
+    }
     
     if (this.remainingLives <= 0) {
       this.handleGameOver();
     }
   }
 
-  updateStatisticsDisplay() {
-    const livesElement = this.container.querySelector('.lives-count');
-    const blocksElement = this.container.querySelector('.blocks-count');
-    
-    if (livesElement) livesElement.textContent = this.remainingLives;
-    if (blocksElement) blocksElement.textContent = `${this.totalBlocksCleared}/${this.totalBlocksToSpawn}`;
-  }
-
   handleGameOver() {
     console.log('[Game2Scene] game over');
-    this.isActive = false;
     
     // remove all falling blocks from screen
     this.currentlyFallingBlocks.forEach(block => {
@@ -329,23 +401,19 @@ export default class Game2Scene {
     }
     
     // show game over message briefly before moving on
-    const gameArea = this.container.querySelector('#tetris-area');
-    gameArea.innerHTML = '<div class="game-over-message"><h3>game over!</h3></div>';
+    const gameArea = this.container.querySelector('.game2-container');
+    gameArea.innerHTML = '<div class="game-over-message"><h3>Helaas!</h3></div>';
     
-    setTimeout(() => {
-      this.handleGameComplete();
-    }, 2000);
+    this.handleGameComplete();
   }
 
   handleGamePause() {
-    console.log('[Game2Scene] game paused');
     this.isPaused = true;
     const pauseOverlay = this.container.querySelector('.pause-overlay');
     pauseOverlay.classList.remove('hidden');
   }
 
   handleGameResume() {
-    console.log('[Game2Scene] game resumed');
     this.isPaused = false;
     const pauseOverlay = this.container.querySelector('.pause-overlay');
     pauseOverlay.classList.add('hidden');
@@ -353,15 +421,21 @@ export default class Game2Scene {
   }
 
   handleGameComplete() {
-    console.log('[Game2Scene] game 2 completed, isActive:', this.isActive, 'lives:', this.remainingLives);
     if (this.isActive) {
-      this.isActive = false; // Prevent double emission
+      this.isActive = false;
+      console.log('Game 2 ended');
       gameEvents.emit(Events.SCENE_COMPLETE, { scene: 'game2' });
     }
   }
 
+  /**
+  * @param ms - Duration of delay (in ms)
+  */
+  delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   cleanup() {
-    console.log('[Game2Scene] cleaning up...');
     this.isActive = false;
     this.isPaused = false;
     
@@ -398,6 +472,12 @@ export default class Game2Scene {
     });
 
     this.currentlyFallingBlocks = [];
+    
+    // clean up heart animations
+    this.heartAnimations.forEach(animation => {
+      if (animation) animation.destroy();
+    });
+    this.heartAnimations = [];
     
     this.container.classList.add('hidden');
   }
