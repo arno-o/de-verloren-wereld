@@ -51,7 +51,13 @@ export default class PlayerManager {
     try {
       const source = this.audioContext.createBufferSource();
       source.buffer = this.audioBuffers.get(playerId);
-      source.connect(this.audioContext.destination);
+      
+      // Create gain node for volume control
+      const gainNode = this.audioContext.createGain();
+      gainNode.gain.value = 0.30;
+      
+      source.connect(gainNode);
+      gainNode.connect(this.audioContext.destination);
       source.start(0);
     } catch (error) {
       console.error(`[PlayerManager] Failed to play sound for player ${playerId}:`, error);

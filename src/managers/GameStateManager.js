@@ -316,13 +316,15 @@ export default class GameStateManager {
   }
 
   resetToIdle() {
-    console.log('[GameStateManager] Resetting to idle...');
-    this.clearAllTimers();
-    this.missingPlayers.clear();
-    this.playerManager.reset();
-    this.setState(GameStates.IDLE);
-    this.sceneManager.switchScene('idle');
-    this.backgroundManager.setSegment('IDLE');
+    // console.log('[GameStateManager] Resetting to idle...');
+    // this.clearAllTimers();
+    // this.missingPlayers.clear();
+    // this.playerManager.reset();
+    // this.setState(GameStates.IDLE);
+    // this.sceneManager.switchScene('idle');
+    // this.backgroundManager.setSegment('IDLE');
+
+    location.reload();
   }
 
   clearAllTimers() {

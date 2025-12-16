@@ -96,6 +96,7 @@ export default class PlayerSelectScene {
 
     this.clockTickAudio = new Audio('assets/audio/effects/clock_tick.mp3');
     this.clockTickAudio.loop = true;
+    this.clockTickAudio.volume = 0.30;
   }
 
   start() {
