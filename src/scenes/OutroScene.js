@@ -5,7 +5,6 @@ export default class OutroScene {
     this.container = container;
     this.playerManager = playerManager;
     this.isActive = false;
-    this.outroTimer = null;
   }
 
   init() {
@@ -29,40 +28,13 @@ export default class OutroScene {
     `;
   }
 
-  start(options = {}) {
-    console.log('[OutroScene] Starting outro scene...');
+  start() {
     this.isActive = true;
     this.container.classList.remove('hidden');
-    
-    // play outro
-    this.playOutro();
-  }
-
-  playOutro() {
-    // auto-complete after timer
-    this.outroTimer = setTimeout(() => {
-      this.onOutroComplete();
-    }, 8000); // give time to see message, outro plays 20s in GameStateManager
-    
-    // TODO: add audio/video playback here
-  }
-
-  onOutroComplete() {
-    console.log('[OutroScene] Outro completed');
-    if (this.isActive) {
-      gameEvents.emit(Events.SCENE_COMPLETE, { scene: 'outro' });
-    }
   }
 
   cleanup() {
-    console.log('[OutroScene] Cleaning up...');
     this.isActive = false;
-    
-    if (this.outroTimer) {
-      clearTimeout(this.outroTimer);
-      this.outroTimer = null;
-    }
-    
     this.container.classList.add('hidden');
   }
 }

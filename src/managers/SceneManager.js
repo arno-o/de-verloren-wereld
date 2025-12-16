@@ -4,6 +4,7 @@ import PlayerSelectScene from '../scenes/PlayerSelectScene.js';
 import IntroScene from '../scenes/IntroScene.js';
 import Game1Scene from '../scenes/Game1Scene.js';
 import PlayerCheckScene from '../scenes/PlayerCheckScene.js';
+import Intro2Scene from '../scenes/Intro2Scene.js';
 import Game2Scene from '../scenes/Game2Scene.js';
 import OutroScene from '../scenes/OutroScene.js';
 
@@ -15,22 +16,25 @@ export default class SceneManager {
     this.playerManager = null;
   }
 
-  init(playerManager) {
+  init(playerManager, backgroundManager) {
     this.playerManager = playerManager;
+    this.backgroundManager = backgroundManager;
     
     const idleContainer = document.getElementById(SceneIds.IDLE);
     const playerSelectContainer = document.getElementById(SceneIds.PLAYER_SELECT);
     const introContainer = document.getElementById(SceneIds.INTRO);
     const game1Container = document.getElementById(SceneIds.GAME_1);
     const playerCheckContainer = document.getElementById(SceneIds.PLAYER_CHECK);
+    const intro2Container = document.getElementById(SceneIds.INTRO_2);
     const game2Container = document.getElementById(SceneIds.GAME_2);
     const outroContainer = document.getElementById(SceneIds.OUTRO);
 
     this.scenes.set('idle', new IdleScene(idleContainer));
     this.scenes.set('player-select', new PlayerSelectScene(playerSelectContainer, playerManager));
-    this.scenes.set('intro', new IntroScene(introContainer, playerManager));
+    this.scenes.set('intro', new IntroScene(introContainer, playerManager, backgroundManager));
     this.scenes.set('game1', new Game1Scene(game1Container, playerManager));
     this.scenes.set('player-check', new PlayerCheckScene(playerCheckContainer, playerManager));
+    this.scenes.set('intro2', new Intro2Scene(intro2Container, playerManager));
     this.scenes.set('game2', new Game2Scene(game2Container, playerManager));
     this.scenes.set('outro', new OutroScene(outroContainer, playerManager));
 

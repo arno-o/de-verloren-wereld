@@ -1,5 +1,5 @@
 export const DEV_MODE = {
-  ENABLED: true,
+  ENABLED: false,
   START_SCENE: 'game2', // options: null, 'idle', 'player-select', 'intro', 'game1', 'game2', 'outro'
   MOCK_PLAYERS: 2,
   RESET_KEY: 'm'
@@ -11,7 +11,8 @@ export const BackgroundStates = {
   GAME: 'GAME',
   TRANSITION_END: 'TRANSITION_END',
   PROCESS_UP: 'PROCESS_UP',
-  PROCESS_DOWN: 'PROCESS_DOWN'
+  PROCESS_DOWN: 'PROCESS_DOWN',
+  ENDING: 'ENDING'
 };
 
 export const BackgroundConfig = {
@@ -23,28 +24,33 @@ export const BackgroundConfig = {
       loop: true
     },
     TRANSITION_START: {
-      startFrame: 200,
-      endFrame: 250,
-      loop: false
-    },
-    GAME: {
-      startFrame: 250,
-      endFrame: 350,
-      loop: true
-    },
-    TRANSITION_END: {
       startFrame: 350,
       endFrame: 400,
       loop: false
     },
-    PROCESS_UP: {
+    GAME: {
       startFrame: 400,
-      endFrame: 450,
+      endFrame: 500,
+      loop: true
+    },
+    TRANSITION_END: {
+      startFrame: 500,
+      endFrame: 550,
+      loop: false
+    },
+    PROCESS_UP: {
+      startFrame: 200,
+      endFrame: 250,
       loop: false
     },
     PROCESS_DOWN: {
-      startFrame: 450,
-      endFrame: 500,
+      startFrame: 250,
+      endFrame: 300,
+      loop: false
+    },
+    ENDING: {
+      startFrame: 600,
+      endFrame: 1225,
       loop: false
     }
   }
@@ -57,6 +63,7 @@ export const GameStates = {
   INTRO: 'intro',
   GAME_1: 'game1',
   PLAYER_CHECK_1: 'player-check-1',
+  INTRO_2: 'intro2',
   GAME_2: 'game2',
   PLAYER_CHECK_2: 'player-check-2',
   OUTRO: 'outro',
@@ -84,7 +91,7 @@ export const SceneConfig = {
   MIN_PLAYERS_GRACE_PERIOD: 10000,
   PLAYER_CHECK_PAUSE: 5000,
   INTRO_DURATION: 1000,
-  OUTRO_DURATION: 20000,
+  OUTRO_DURATION: 15000,
   TRANSITION_DURATION: 1000,
   PROCESS_HOLD_DURATION: 3000, // time to hold on process screen before continuing
 };
@@ -96,6 +103,7 @@ export const SceneIds = {
   INTRO: 'scene-intro',
   GAME_1: 'scene-game1',
   PLAYER_CHECK: 'scene-player-check',
+  INTRO_2: 'scene-intro2',
   GAME_2: 'scene-game2',
   OUTRO: 'scene-outro'
 };

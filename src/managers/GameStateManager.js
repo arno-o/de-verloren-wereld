@@ -24,7 +24,7 @@ export default class GameStateManager {
       }
     }
 
-    this.sceneManager.init(this.playerManager);
+    this.sceneManager.init(this.playerManager, this.backgroundManager);
     this.setupEventListeners();
 
     // dev mode check
@@ -64,6 +64,7 @@ export default class GameStateManager {
       case GameStates.INTRO: return 'intro';
       case GameStates.GAME_1: return 'game1';
       case GameStates.PLAYER_CHECK_1: return 'player-check';
+      case GameStates.INTRO_2: return 'intro2';
       case GameStates.GAME_2: return 'game2';
       case GameStates.PLAYER_CHECK_2: return 'player-check';
       case GameStates.OUTRO: return 'outro';
@@ -161,21 +162,8 @@ export default class GameStateManager {
     // lock in players
     this.playerManager.lockInPlayers();
     this.setState(GameStates.INTRO);
+    this.backgroundManager.setSegment('PROCESS_UP');
     this.sceneManager.switchScene('intro');
-
-    this.backgroundManager.setSegment('PROCESS_UP', () => {
-      console.log('[GameStateManager] Process up complete, holding...');
-
-      setTimeout(() => {
-        this.backgroundManager.setSegment('PROCESS_DOWN', () => {
-          this.backgroundManager.setSegment('TRANSITION_START', () => {
-            this.backgroundManager.setSegment('GAME');
-            this.sceneManager.switchScene('game1');
-            this.setState(GameStates.GAME_1);
-          });
-        });
-      }, SceneConfig.PROCESS_HOLD_DURATION);
-    });
   }
 
   startGame1() {
@@ -192,35 +180,35 @@ export default class GameStateManager {
     this.sceneManager.switchScene('player-check', { checkNumber });
   }
 
+  startIntro2() {
+    console.log('[GameStateManager] Starting intro 2...');
+    this.setState(GameStates.INTRO_2);
+    this.backgroundManager.setSegment('PROCESS_UP');
+    this.sceneManager.switchScene('intro2');
+  }
+
   startGame2() {
     console.log('[GameStateManager] Starting Game 2...');
     this.setState(GameStates.GAME_2);
-
-    this.backgroundManager.setSegment('PROCESS_UP', () => {
-      console.log('[GameStateManager] Process up complete, holding...');
-
-      setTimeout(() => {
-        console.log('[GameStateManager] Hold complete, playing process down...');
-        this.backgroundManager.setSegment('PROCESS_DOWN', () => {
-          this.backgroundManager.setSegment('TRANSITION_START', () => {
-            this.backgroundManager.setSegment('GAME');
-            this.sceneManager.switchScene('game2');
-          });
-        });
-      }, SceneConfig.PROCESS_HOLD_DURATION);
-    });
+    this.sceneManager.switchScene('game2');
   }
 
   startOutro() {
     console.log('[GameStateManager] Starting outro...');
     this.setState(GameStates.OUTRO);
     this.sceneManager.switchScene('outro');
+    this.backgroundManager.setSegment('ENDING', () => {
+      this.resetToIdle();
+    });
   }
 
   onSceneComplete(sceneName, data = {}) {
     switch (sceneName) {
       case 'intro':
-        this.startGame1();
+        this.backgroundManager.setSegment('TRANSITION_START', () => {
+            this.backgroundManager.setSegment('GAME');
+            this.startGame1();
+          });
         break;
       case 'game1':
         this.sceneManager.hideCurrentScene();
@@ -230,11 +218,19 @@ export default class GameStateManager {
         break;
       case 'player-check-1':
         if (data.playersRemaining > 1) {
-          this.startGame2();
-          this.sceneManager.hideCurrentScene();
+          this.startIntro2();
         } else {
           this.resetToIdle();
         }
+        break;
+      case 'intro2':
+        // After intro2 completes, transition background to game
+        this.backgroundManager.setSegment('PROCESS_DOWN', () => {
+          this.backgroundManager.setSegment('TRANSITION_START', () => {
+            this.backgroundManager.setSegment('GAME');
+            this.startGame2();
+          });
+        });
         break;
       case 'game2':
         this.sceneManager.hideCurrentScene();
@@ -249,11 +245,6 @@ export default class GameStateManager {
         } else {
           this.resetToIdle();
         }
-        break;
-      case 'outro':
-        this.timers.set('outro', setTimeout(() => {
-          this.resetToIdle();
-        }, SceneConfig.OUTRO_DURATION));
         break;
       default:
         console.warn(`[GameStateManager] Unknown scene completion: ${sceneName}`);

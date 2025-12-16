@@ -1,5 +1,6 @@
 import { AvatarColors, PlayerConfig, SceneConfig } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
+import Lottie from 'lottie-web';
 
 export default class PlayerCheckScene {
   constructor(container, playerManager) {
@@ -10,6 +11,8 @@ export default class PlayerCheckScene {
     this.checkTimer = null;
     this.gracePeriodTimer = null;
     this.inGracePeriod = false;
+    this.avatars = [];
+    this.avatarStates = []; // Track current state of each avatar
   }
 
   init() {
@@ -20,13 +23,15 @@ export default class PlayerCheckScene {
   setupHTML() {
     this.container.innerHTML = `
       <div class="player-select-content">
-        <h2>Iedereen terug op zijn veld!</h2>
-        <p class="instructions">Ga op je veld staan om door te gaan</p>
+        <div class="player-select-title">
+          <h2>Iedereen terug op zijn veld!</h2>
+          <p>Ga op je veld staan om door te gaan</p>
+        </div>
         
         <div class="player-avatars">
           ${Array.from({ length: PlayerConfig.MAX_PLAYERS }, (_, i) => `
             <div class="avatar-slot" data-player="${i + 1}">
-              <div class="avatar empty"></div>
+              <div class="avatar empty" id="check-player-${i}"></div>
               <span>Speler ${i + 1}</span>
             </div>
           `).join('')}
@@ -37,6 +42,38 @@ export default class PlayerCheckScene {
         </div>
       </div>
     `;
+
+    const avatarTypes = ['water', 'fire', 'earth', 'air'];
+
+    this.segments = {
+      active: [0, 250],           // 0-10 seconds
+      toInactive: [250, 275],     // 10-11 seconds
+      inactive: [275, 350],       // 11-14 seconds
+      toActive: [350, 375]        // 14-15 seconds
+    };
+
+    for (let i = 0; i < PlayerConfig.MAX_PLAYERS; i++) {
+      const playerContainer = document.querySelector(`#check-player-${i}`);
+      const avatarType = avatarTypes[i % avatarTypes.length];
+
+      const animation = Lottie.loadAnimation({
+        container: playerContainer,
+        renderer: 'svg',
+        loop: false,
+        autoplay: false,
+        path: `./assets/avatars/avatar_${avatarType}.json`,
+        rendererSettings: {
+          preserveAspectRatio: 'xMidYMid slice',
+        }
+      });
+
+      animation.addEventListener('DOMLoaded', () => {
+        animation.goToAndStop(this.segments.inactive[0], true);
+      });
+
+      this.avatars.push(animation);
+      this.avatarStates.push('inactive');
+    }
   }
 
   start(options = {}) {
@@ -62,6 +99,9 @@ export default class PlayerCheckScene {
     for (let i = 1; i <= PlayerConfig.MAX_PLAYERS; i++) {
       const slot = this.container.querySelector(`[data-player="${i}"]`);
       const avatar = slot.querySelector('.avatar');
+      const avatarIndex = i - 1;
+      const animation = this.avatars[avatarIndex];
+      const currentState = this.avatarStates[avatarIndex];
       const isInitialPlayer = initialPlayerIds.includes(i);
       const player = players.find(p => p.id === i);
       
@@ -69,19 +109,46 @@ export default class PlayerCheckScene {
         // not an initial player - show as empty
         slot.style.opacity = '0.3';
         avatar.classList.add('empty');
-        avatar.classList.remove('active', 'waiting');
         avatar.style.backgroundColor = '';
+        if (animation && currentState !== 'inactive') {
+          this.avatarStates[avatarIndex] = 'inactive';
+          animation.removeEventListener('complete');
+          animation.addEventListener('complete', () => {
+            animation.playSegments(this.segments.inactive, true);
+            animation.loop = true;
+          });
+          animation.loop = false;
+          animation.playSegments(this.segments.toInactive, true);
+        }
       } else {
         slot.style.opacity = '1';
         avatar.classList.remove('empty');
         avatar.style.backgroundColor = AvatarColors[i - 1];
         
         if (player.isOnPlate) {
-          avatar.classList.add('active');
-          avatar.classList.remove('waiting');
+          // Player is on plate - show as active
+          if (animation && currentState !== 'active') {
+            this.avatarStates[avatarIndex] = 'active';
+            animation.removeEventListener('complete');
+            animation.addEventListener('complete', () => {
+              animation.playSegments(this.segments.active, true);
+              animation.loop = true;
+            });
+            animation.loop = false;
+            animation.playSegments(this.segments.toActive, true);
+          }
         } else {
-          avatar.classList.remove('active');
-          avatar.classList.add('waiting');
+          // Player is not on plate - show as inactive/waiting
+          if (animation && currentState !== 'inactive') {
+            this.avatarStates[avatarIndex] = 'inactive';
+            animation.removeEventListener('complete');
+            animation.addEventListener('complete', () => {
+              animation.playSegments(this.segments.inactive, true);
+              animation.loop = true;
+            });
+            animation.loop = false;
+            animation.playSegments(this.segments.toInactive, true);
+          }
         }
       }
     }
@@ -180,6 +247,12 @@ export default class PlayerCheckScene {
       clearTimeout(this.gracePeriodTimer);
       this.gracePeriodTimer = null;
     }
+    
+    this.avatars.forEach(avatar => {
+      if (avatar) avatar.destroy();
+    });
+    this.avatars = [];
+    this.avatarStates = [];
     
     if (this.activeListener) {
       gameEvents.off(Events.PLAYER_ACTIVE, this.activeListener);
