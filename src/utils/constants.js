@@ -1,6 +1,6 @@
 export const DEV_MODE = {
-  ENABLED: false,
-  START_SCENE: 'game2', // options: null, 'idle', 'player-select', 'intro', 'game1', 'game2', 'outro'
+  ENABLED: true,
+  START_SCENE: 'game1', // options: null, 'idle', 'player-select', 'intro', 'game1', 'game2', 'outro'
   MOCK_PLAYERS: 2,
   RESET_KEY: 'm'
 };

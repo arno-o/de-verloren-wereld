@@ -445,6 +445,12 @@ body {
   transition: all 0.1s ease;
 }
 
+.game1-footer > div {
+  font-size: 3rem;
+  text-align: center;
+  /* text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); */
+}
+
 #player-blocks-container {
   gap: 5%;
   display: flex;

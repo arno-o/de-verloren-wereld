@@ -22,6 +22,8 @@ export default class Game1Scene {
     this.failCount = 0;
     this.maxFails = 3;
     this.sequenceLength = 4;
+    this.currentSequenceNumber = 0;
+    this.totalSequences = 3;
     
     // Heart animations
     this.heartAnimations = [];
@@ -179,15 +181,14 @@ export default class Game1Scene {
 
   startGameLogic() {
     this.failCount = 0;
-    this.updateAttemptsDisplay();
-    
-    this.startCountdown("Onthoud de volgorde!");
+    this.currentSequenceNumber = 0;
+    this.startCountdown("Onthoud de volgorde!", true);
+    this.updateRoundDisplay();
   }
 
-  startCountdown(tooltip = "Ben je er klaar voor?") {
+  startCountdown(tooltip = "Ben je er klaar voor?", lastWasSuccess) {
     const game1CountdownTooltip = document.querySelector(".game1-timer-tooltip");
     const game1CountdownContainer = document.querySelector(".game1-timer-container");
-    const game1PlayerBlocksContainer = document.querySelector("#player-blocks-container");
     const game1CountdownAnimationContainer = document.querySelector(".game1-timer-animation");
     
     let game1CountdownAnimation = Lottie.loadAnimation({
@@ -211,11 +212,16 @@ export default class Game1Scene {
       this.revealPlayerBlocks();
       await this.delay(100);
       game1CountdownAnimation.destroy();
-      this.startNewSequence();
+      this.startNewSequence(lastWasSuccess);
     })
   }
 
-  startNewSequence() {
+  startNewSequence(lastWasSuccess) {
+    if (lastWasSuccess) {
+      this.currentSequenceNumber++;
+    }
+
+    this.updateRoundDisplay();
     this.sequence = this.generateSequence();
     this.playerInput = [];
         
@@ -224,16 +230,16 @@ export default class Game1Scene {
     }, 1000);
   }
 
-  generateSequence() {
-    const sequence = [];
-    for (let i = 0; i < this.sequenceLength; i++) {
-      let newNumber;
-      do {
-        newNumber = Math.floor(Math.random() * 4) + 1;
-      } while (i > 0 && newNumber === sequence[i - 1]);
-      sequence.push(newNumber);
+  generateSequence() { // the fisher yates method
+    const sequence = [1, 2, 3, 4];
+
+    for (let i = sequence.length -1; i > 0; i--) {
+      let j = Math.floor(Math.random() * (i+1));
+      let k = sequence[i];
+      sequence[i] = sequence[j];
+      sequence[j] = k
     }
-    console.log(sequence);
+    
     return sequence;
   }
 
@@ -320,7 +326,7 @@ export default class Game1Scene {
     this.playHeartAnimation(this.failCount - 1);
     this.playErrorSound();
     this.triggerErrorFlash();
-    this.updateAttemptsDisplay();
+    this.updateRoundDisplay();
     
     this.playerBlocks.forEach(block => block.classList.add('error'));
     
@@ -328,13 +334,14 @@ export default class Game1Scene {
       this.playerBlocks.forEach(block => block.classList.remove('error'));
       this.hidePlayerBlocks();
       
-      if (this.failCount >= this.maxFails) {
+      // Check if we've played enough sequences
+      if (this.currentSequenceNumber >= this.totalSequences) {
         setTimeout(() => {
           this.onGameComplete();
         }, 1500);
       } else {
         setTimeout(() => {
-          this.startCountdown("Oei! Probeer nog eens");
+          this.startCountdown("Oei! Verkeerd..", false);
         }, 1000);
       }
     }, 800);
@@ -351,15 +358,24 @@ export default class Game1Scene {
     this.isAcceptingInput = false;
     
     setTimeout(() => {
-      this.onGameComplete();
-    }, 1500);
+      this.hidePlayerBlocks();
+      
+      // Check if we've played enough sequences
+      if (this.currentSequenceNumber >= this.totalSequences) {
+        setTimeout(() => {
+          this.onGameComplete();
+        }, 1500);
+      } else {
+        setTimeout(() => {
+          this.startCountdown("Volgende volgorde!", true);
+        }, 1000);
+      }
+    }, 500);
   }
 
-  updateAttemptsDisplay() {
-    const attemptsLeft = this.container.querySelector('.attempts-left');
-    if (attemptsLeft) {
-      attemptsLeft.textContent = this.maxFails - this.failCount;
-    }
+  updateRoundDisplay() {
+    const element = document.querySelector('.game1-footer-avatars');
+    element.innerHTML = `Ronde ${this.currentSequenceNumber}/${this.totalSequences}`
   }
 
   handlePause() {
@@ -385,13 +401,6 @@ export default class Game1Scene {
     if (this.isActive && !this.isPaused) {
       gameEvents.emit(Events.SCENE_COMPLETE, { scene: 'game1' });
     }
-  }
-
-  update(deltaTime) {
-    // Called each frame if needed
-    if (!this.isActive || this.isPaused) return;
-    
-    // Implement game loop here
   }
 
   cleanup() {
