@@ -21,6 +21,7 @@ export default class PlayerSelectScene {
     this.avatars = [];
     this.avatarStates = []; // Track current state of each avatar
     this.countdownAnimation = null;
+    this.clockTickAudio = null;
   }
 
   init() {
@@ -92,6 +93,9 @@ export default class PlayerSelectScene {
         preserveAspectRatio: 'xMidYMid slice',
       }
     });
+
+    this.clockTickAudio = new Audio('assets/audio/effects/clock_tick.mp3');
+    this.clockTickAudio.loop = true;
   }
 
   start() {
@@ -193,6 +197,10 @@ export default class PlayerSelectScene {
         this.onCountdownComplete();
       });
       this.countdownAnimation.play();
+
+      if (this.clockTickAudio) {
+        this.clockTickAudio.play().catch(err => console.error('[PlayerSelectScene] Clock tick playback error:', err));
+      }
     }
   }
 
@@ -216,6 +224,11 @@ export default class PlayerSelectScene {
       clearTimeout(this.countdownTimer);
       this.countdownTimer = null;
     }
+
+    if (this.clockTickAudio) {
+      this.clockTickAudio.pause();
+      this.clockTickAudio.currentTime = 0;
+    }
   }
 
   onCountdownComplete() {
@@ -233,6 +246,11 @@ export default class PlayerSelectScene {
     this.isActive = false;
 
     this.stopCountdown();
+
+    if (this.clockTickAudio) {
+      this.clockTickAudio.pause();
+      this.clockTickAudio.currentTime = 0;
+    }
 
     if (this.countdownAnimation) {
       this.countdownAnimation.destroy();

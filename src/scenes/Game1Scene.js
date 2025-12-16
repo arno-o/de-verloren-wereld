@@ -1,3 +1,4 @@
+import gsap from 'gsap';
 import Lottie from 'lottie-web';
 import { AvatarBackgrounds } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
@@ -31,6 +32,7 @@ export default class Game1Scene {
     // Audio
     this.audioContext = null;
     this.errorSoundBuffer = null;
+    this.successSoundBuffer = null;
     
     // Event listeners
     this.playerActiveListener = null;
@@ -45,6 +47,7 @@ export default class Game1Scene {
   setupHTML() {
     this.container.innerHTML = `
       <div class="error-flash-overlay"></div>
+      <div class="success-flash-overlay"></div>
       <div class="game1-content">
         <div class="game1-title">
           <p>De Verloren Wereld</p>
@@ -69,9 +72,14 @@ export default class Game1Scene {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
       
       // Load error sound
-      const response = await fetch('./assets/audio/errors/memory.wav');
-      const arrayBuffer = await response.arrayBuffer();
-      this.errorSoundBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      const errorResponse = await fetch('./assets/audio/errors/memory.wav');
+      const errorArrayBuffer = await errorResponse.arrayBuffer();
+      this.errorSoundBuffer = await this.audioContext.decodeAudioData(errorArrayBuffer);
+      
+      // Load success sound
+      const successResponse = await fetch('./assets/audio/effects/succes.mp3');
+      const successArrayBuffer = await successResponse.arrayBuffer();
+      this.successSoundBuffer = await this.audioContext.decodeAudioData(successArrayBuffer);
       
       console.log('[Game1Scene] Audio initialized successfully');
     } catch (error) {
@@ -95,6 +103,30 @@ export default class Game1Scene {
     }
   }
 
+  playSuccessSound() {
+    if (!this.audioContext || !this.successSoundBuffer) {
+      console.warn('[Game1Scene] Audio not ready');
+      return;
+    }
+
+    try {
+      const source = this.audioContext.createBufferSource();
+      source.buffer = this.successSoundBuffer;
+      source.connect(this.audioContext.destination);
+      source.start(0);
+    } catch (error) {
+      console.error('[Game1Scene] Failed to play success sound:', error);
+    }
+  }
+  triggerSuccessFlash() {
+    const successOverlay = this.container.querySelector('.success-flash-overlay');
+    if (successOverlay) {
+      successOverlay.classList.add('active');
+      setTimeout(() => {
+        successOverlay.classList.remove('active');
+      }, 600);
+    }
+  }
   triggerErrorFlash() {
     const overlay = this.container.querySelector('.error-flash-overlay');
     if (!overlay) return;
@@ -110,6 +142,10 @@ export default class Game1Scene {
     this.isActive = true;
     this.isPaused = false;
     this.container.classList.remove('hidden');
+    
+    // Update progress bar
+    let progress = document.querySelector("#progress-bar-over");
+    gsap.to(progress, { width: "40%", duration: 0.5, ease: "power2.out" });
     
     // fetch active players
     this.activePlayers = this.playerManager.getActivePlayerIds();
@@ -356,6 +392,8 @@ export default class Game1Scene {
 
   handleSequenceComplete() {
     this.isAcceptingInput = false;
+    this.playSuccessSound();
+    this.triggerSuccessFlash();
     
     setTimeout(() => {
       this.hidePlayerBlocks();

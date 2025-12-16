@@ -1,16 +1,19 @@
-import { SceneConfig } from '../utils/constants.js';
-import { gameEvents, Events } from '../utils/events.js';
+import gsap from 'gsap';
 import Lottie from 'lottie-web';
+import { gameEvents, Events } from '../utils/events.js';
 
 export default class Intro2Scene {
-  constructor(container, playerManager) {
+  constructor(container, playerManager, backgroundManager) {
     this.isActive = false;
     this.introTimer = null;
     this.container = container;
     
+    this.backgroundManager = backgroundManager;
     this.playerManager = playerManager;
+
     this.animation = null;
     this.audio = null;
+    this.backgroundMusic = null;
     this.hasTriggeredTransition = false;
     this.video = null;
   }
@@ -24,14 +27,22 @@ export default class Intro2Scene {
     this.container.innerHTML = `
       <div class="intro-content">
         <div class="intro-animation" id="intro2-animation"></div>
-        <video class="intro-video" id="intro2-video" style="display: none; width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;">
-          <source src="assets/videos/demo_game_2.mp4" type="video/mp4">
-        </video>
+        <div class="intro-video-backdrop" id="intro2-video-backdrop">
+          <div class="intro-video-title">Hoe werkt het?</div>
+          <div class="intro-video-frame">
+            <video class="intro-video" id="intro2-video">
+              <source src="assets/videos/demo_game_2.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
       </div>
     `;
     
     // Load audio
     this.audio = new Audio('assets/audio/voiceovers/_MEMORY_SUCCESS.m4a');
+    
+    // Load background music
+    this.backgroundMusic = new Audio('assets/audio/music/background-bring-sound-back.mp3');
   }
   
   loadAnimation() {
@@ -42,16 +53,7 @@ export default class Intro2Scene {
       renderer: 'svg',
       loop: false,
       autoplay: false,
-      path: 'assets/animations/process_screen.json'
-    });
-    
-    // Set up complete listener
-    this.animation.addEventListener('complete', () => {
-      if (!this.hasTriggeredTransition) {
-        console.log('[Intro2Scene] Animation complete, showing video');
-        this.hasTriggeredTransition = true;
-        this.fadeOutAnimationAndPlayVideo();
-      }
+      path: 'assets/animations/process.json'
     });
   }
 
@@ -59,6 +61,14 @@ export default class Intro2Scene {
     this.isActive = true;
     this.hasTriggeredTransition = false;
     this.container.classList.remove('hidden');
+    
+    // Update progress bar
+    let progress = document.querySelector("#progress-bar-over");
+    gsap.to(progress, { width: "60%", duration: 0.5, ease: "power2.out" });
+    
+    // Start background music
+    this.backgroundMusic.play().catch(err => console.error('[Intro2Scene] Background music playback error:', err));
+    this.backgroundMusic.volume = 0.20;
     
     // Load animation and get video reference
     this.loadAnimation();
@@ -74,17 +84,22 @@ export default class Intro2Scene {
     // Start audio
     this.audio.play().catch(err => console.error('[Intro2Scene] Audio playback error:', err));
     
-    if (this.animation) {
-      console.log('[Intro2Scene] Playing animation from frame 200 to 400...');
-      // Play the second segment of the animation (frames 200-400)
-      this.animation.playSegments([200, 400], true);
-    } else {
-      console.error('[Intro2Scene] Animation not loaded!');
-    }
+    this.animation.addEventListener('DOMLoaded', () => {
+      this.animation.playSegments([250, 450], true);
+    })
+
+    // Listen for animation complete
+    this.animation.addEventListener('complete', () => {
+      this.backgroundManager.setSegment('PROCESS_DOWN', () => {
+        this.backgroundManager.setSegment('IDLE');
+        this.fadeOutAnimationAndPlayVideo();
+      })
+    });
   }
 
   fadeOutAnimationAndPlayVideo() {
     const animationContainer = document.getElementById('intro2-animation');
+    const videoBackdrop = document.getElementById('intro2-video-backdrop');
     
     console.log('[Intro2Scene] Fading out animation and playing video');
     
@@ -94,7 +109,7 @@ export default class Intro2Scene {
     
     setTimeout(() => {
       animationContainer.style.display = 'none';
-      this.video.style.display = 'block';
+      videoBackdrop.classList.add('visible');
       
       console.log('[Intro2Scene] Starting video playback');
       
@@ -102,6 +117,8 @@ export default class Intro2Scene {
       
       this.video.addEventListener('ended', () => {
         console.log('[Intro2Scene] Video ended');
+        this.video.style.opacity = '0';
+        videoBackdrop.classList.remove('visible');
         this.handleVideoComplete();
       });
     }, 500);
@@ -115,6 +132,15 @@ export default class Intro2Scene {
   onIntroComplete() {
     if (this.isActive) {
       gameEvents.emit(Events.SCENE_COMPLETE, { scene: 'intro2' });
+    }
+  }
+
+  returnToIdle() {
+    console.log('[Intro2Scene] Returning to idle, stopping background music');
+    
+    if (this.backgroundMusic) {
+      this.backgroundMusic.pause();
+      this.backgroundMusic.currentTime = 0;
     }
   }
 

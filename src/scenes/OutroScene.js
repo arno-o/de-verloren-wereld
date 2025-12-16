@@ -1,3 +1,4 @@
+import gsap from 'gsap';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class OutroScene {
@@ -31,6 +32,10 @@ export default class OutroScene {
   start() {
     this.isActive = true;
     this.container.classList.remove('hidden');
+    
+    // Update progress bar to 100%
+    let progress = document.querySelector("#progress-bar-over");
+    gsap.to(progress, { width: "100%", duration: 0.5, ease: "power2.out" });
   }
 
   cleanup() {

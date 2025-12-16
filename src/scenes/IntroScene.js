@@ -1,6 +1,5 @@
+import gsap from 'gsap';
 import Lottie from 'lottie-web';
-
-import { SceneConfig } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class IntroScene {
@@ -67,8 +66,7 @@ export default class IntroScene {
 
   playDemo() {
     let progress = document.querySelector("#progress-bar-over");
-    progress.style.transition = "width 0.5s ease";
-    progress.style.width = "20%";
+    gsap.to(progress, { width: "20%", duration: 0.5, ease: "power2.out" });
     
     this.animation.addEventListener('DOMLoaded', () => {
       this.animation.playSegments([0, 250], true);

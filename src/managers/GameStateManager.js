@@ -137,8 +137,14 @@ export default class GameStateManager {
       case 'game1':
         this.startGame1();
         break;
+      case 'player-check':
+        this.startPlayerCheck();
+        break;
       case 'game2':
         this.startGame2();
+        break;
+      case 'intro2':
+        this.startIntro2();
         break;
       case 'outro':
         this.startOutro();

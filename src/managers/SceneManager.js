@@ -34,7 +34,7 @@ export default class SceneManager {
     this.scenes.set('intro', new IntroScene(introContainer, playerManager, backgroundManager));
     this.scenes.set('game1', new Game1Scene(game1Container, playerManager));
     this.scenes.set('player-check', new PlayerCheckScene(playerCheckContainer, playerManager));
-    this.scenes.set('intro2', new Intro2Scene(intro2Container, playerManager));
+    this.scenes.set('intro2', new Intro2Scene(intro2Container, playerManager, backgroundManager));
     this.scenes.set('game2', new Game2Scene(game2Container, playerManager));
     this.scenes.set('outro', new OutroScene(outroContainer, playerManager));
 
