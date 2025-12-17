@@ -16,7 +16,7 @@ export default class Game2Scene {
     // game state
     this.remainingLives = 3;
     this.totalBlocksCleared = 0;
-    this.totalBlocksToSpawn = 25;
+    this.blocksNeededToClear = 25;
     this.animationFrame = null;
     this.lastFrameTime = 0;
     this.upcomingBlockColorQueue = [];
@@ -210,12 +210,19 @@ export default class Game2Scene {
   generateRandomBlockColorSequence() {
     const sequence = [];
 
-    for (let i = 0; i < this.totalBlocksToSpawn; i++) {
+    // Start with 10 blocks in queue
+    for (let i = 0; i < 10; i++) {
       const randomColorId = Math.floor(Math.random() * 4) + 1;
       sequence.push(randomColorId);
     }
 
     return sequence;
+  }
+
+  addBlockToQueue() {
+    // Add a new random block to the queue
+    const randomColorId = Math.floor(Math.random() * 4) + 1;
+    this.upcomingBlockColorQueue.push(randomColorId);
   }
 
   spawnNextBlockFromQueue() {
@@ -265,12 +272,22 @@ export default class Game2Scene {
   }
 
   scheduleNextBlockSpawn() {
+    // Don't spawn more blocks if we've already cleared enough
+    if (this.totalBlocksCleared >= this.blocksNeededToClear) {
+      return;
+    }
+
     const baseSpawnDelay = 2500;
     const minimumSpawnDelay = 800;
-    const gameProgress = this.totalBlocksCleared / this.totalBlocksToSpawn;
+    const gameProgress = this.totalBlocksCleared / this.blocksNeededToClear;
     const currentSpawnDelay = Math.max(minimumSpawnDelay, baseSpawnDelay - (gameProgress * 1700));
     
     const shouldSpawnDoubleBlock = this.totalBlocksCleared >= 15 && Math.random() > 0.6;
+    
+    // Keep the queue filled
+    while (this.upcomingBlockColorQueue.length < 5) {
+      this.addBlockToQueue();
+    }
     
     if (this.upcomingBlockColorQueue.length > 0) {
       setTimeout(() => this.spawnNextBlockFromQueue(), currentSpawnDelay);
@@ -361,8 +378,14 @@ export default class Game2Scene {
     this.totalBlocksCleared++;
     this.updateBlocksCounter();
     
-    if (this.totalBlocksCleared >= this.totalBlocksToSpawn && this.currentlyFallingBlocks.length <= 1) {
-      setTimeout(() => this.handleGameComplete(), 500);
+    // Check if we've cleared enough blocks to complete the game
+    if (this.totalBlocksCleared >= this.blocksNeededToClear) {
+      // Wait for current falling blocks to clear before ending
+      setTimeout(() => {
+        if (this.currentlyFallingBlocks.length === 0) {
+          this.handleGameComplete();
+        }
+      }, 500);
     }
   }
 
