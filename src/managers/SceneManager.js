@@ -16,9 +16,10 @@ export default class SceneManager {
     this.playerManager = null;
   }
 
-  init(playerManager, backgroundManager) {
+  init(playerManager, backgroundManager, voiceoverManager) {
     this.playerManager = playerManager;
     this.backgroundManager = backgroundManager;
+    this.voiceoverManager = voiceoverManager;
     
     const idleContainer = document.getElementById(SceneIds.IDLE);
     const playerSelectContainer = document.getElementById(SceneIds.PLAYER_SELECT);
@@ -29,14 +30,14 @@ export default class SceneManager {
     const game2Container = document.getElementById(SceneIds.GAME_2);
     const outroContainer = document.getElementById(SceneIds.OUTRO);
 
-    this.scenes.set('idle', new IdleScene(idleContainer));
-    this.scenes.set('player-select', new PlayerSelectScene(playerSelectContainer, playerManager));
-    this.scenes.set('intro', new IntroScene(introContainer, playerManager, backgroundManager));
-    this.scenes.set('game1', new Game1Scene(game1Container, playerManager));
-    this.scenes.set('player-check', new PlayerCheckScene(playerCheckContainer, playerManager));
-    this.scenes.set('intro2', new Intro2Scene(intro2Container, playerManager, backgroundManager));
-    this.scenes.set('game2', new Game2Scene(game2Container, playerManager));
-    this.scenes.set('outro', new OutroScene(outroContainer, playerManager));
+    this.scenes.set('idle', new IdleScene(idleContainer, voiceoverManager));
+    this.scenes.set('player-select', new PlayerSelectScene(playerSelectContainer, playerManager, voiceoverManager));
+    this.scenes.set('intro', new IntroScene(introContainer, playerManager, backgroundManager, voiceoverManager));
+    this.scenes.set('game1', new Game1Scene(game1Container, playerManager, voiceoverManager));
+    this.scenes.set('player-check', new PlayerCheckScene(playerCheckContainer, playerManager, voiceoverManager));
+    this.scenes.set('intro2', new Intro2Scene(intro2Container, playerManager, backgroundManager, voiceoverManager));
+    this.scenes.set('game2', new Game2Scene(game2Container, playerManager, voiceoverManager));
+    this.scenes.set('outro', new OutroScene(outroContainer, playerManager, voiceoverManager));
 
     this.scenes.forEach(scene => scene.init());
   }

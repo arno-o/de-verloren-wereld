@@ -3,15 +3,15 @@ import Lottie from 'lottie-web';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class IntroScene {
-  constructor(container, playerManager, backgroundManager) {
+  constructor(container, playerManager, backgroundManager, voiceoverManager) {
     this.isActive = false;
     this.introTimer = null;
     this.container = container;
     
     this.backgroundManager = backgroundManager;
     this.playerManager = playerManager;
+    this.voiceoverManager = voiceoverManager;
 
-    this.audio = null;
     this.video = null;
     this.animation = null;
     this.hasTriggeredTransition = false;
@@ -36,9 +36,6 @@ export default class IntroScene {
         </div>
       </div>
     `;
-
-    // Load audio
-    this.audio = new Audio('assets/audio/voiceovers/_MEMORY_INTRO.m4a');
   }
   
   loadAnimation() {
@@ -72,7 +69,7 @@ export default class IntroScene {
       this.animation.playSegments([0, 250], true);
     })
     
-    // Listen for animation complete
+    // lListen for animation complete
     this.animation.addEventListener('complete', () => {
       this.backgroundManager.setSegment('PROCESS_DOWN', () => {
         this.backgroundManager.setSegment('IDLE');
@@ -89,7 +86,11 @@ export default class IntroScene {
     animationContainer.style.transition = 'opacity 0.5s';
     animationContainer.style.opacity = '0';
 
-    this.audio.play().catch(err => console.error('[IntroScene] Audio playback error:', err));
+    this.voiceoverManager.play('MEMORY_INTRO', {
+      onComplete: () => {
+        // do something
+      }
+    });
     
     setTimeout(() => {
       animationContainer.style.display = 'none';
@@ -118,10 +119,8 @@ export default class IntroScene {
       this.introTimer = null;
     }
 
-    if (this.audio) {
-      this.audio.pause();
-      this.audio.currentTime = 0;
-    }
+    // stop any playing voiceovers
+    this.voiceoverManager.stop();
 
     if (this.video) {
       this.video.pause();

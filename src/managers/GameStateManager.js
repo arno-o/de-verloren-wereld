@@ -3,6 +3,7 @@ import { gameEvents, Events } from '../utils/events.js';
 import SceneManager from './SceneManager.js';
 import PlayerManager from './PlayerManager.js';
 import BackgroundManager from './BackgroundManager.js';
+import VoiceoverManager from './VoiceoverManager.js';
 
 export default class GameStateManager {
   constructor() {
@@ -10,6 +11,7 @@ export default class GameStateManager {
     this.sceneManager = new SceneManager();
     this.playerManager = new PlayerManager();
     this.backgroundManager = new BackgroundManager();
+    this.voiceoverManager = new VoiceoverManager();
     this.timers = new Map();
     this.missingPlayers = new Map(); // playerId -> timer info
   }
@@ -24,7 +26,8 @@ export default class GameStateManager {
       }
     }
 
-    this.sceneManager.init(this.playerManager, this.backgroundManager);
+    this.voiceoverManager.init();
+    this.sceneManager.init(this.playerManager, this.backgroundManager, this.voiceoverManager);
     this.setupEventListeners();
 
     // dev mode check
