@@ -138,19 +138,11 @@ export default class PlayerManager {
     player.isOnPlate = true;
     
     if (!wasActive) {
-      // if game hasn't started, allow them to join
-      if (!this.gameStarted) {
-        player.isActive = true;
-        player.joinedAt = Date.now();
-        console.log(`[PlayerManager] Player ${playerId} joined the game`);
-        gameEvents.emit(Events.PLAYER_JOIN, { playerId, player });
-      } else {
-        // game already started - they can't join, but emit event for gameplay
-        console.log(`[PlayerManager] Player ${playerId} stepped on plate during game`);
-        gameEvents.emit(Events.PLAYER_ACTIVE, { playerId, player });
-      }
+      player.isActive = true;
+      player.joinedAt = Date.now();
+      console.log(`[PlayerManager] Player ${playerId} joined/activated`);
+      gameEvents.emit(Events.PLAYER_JOIN, { playerId, player });
     } else {
-      // player returning to plate
       console.log(`[PlayerManager] Player ${playerId} back on plate`);
       gameEvents.emit(Events.PLAYER_ACTIVE, { playerId, player });
     }
@@ -164,7 +156,6 @@ export default class PlayerManager {
     console.log(`[PlayerManager] Player ${playerId} left plate`);
     gameEvents.emit(Events.PLAYER_INACTIVE, { playerId, player });
     
-    // if game hasn't started yet, leaving plate means they're out completely
     if (!this.gameStarted && player.isActive) {
       console.log(`[PlayerManager] Player ${playerId} left during selection, removing them`);
       this.removePlayer(playerId);

@@ -10,6 +10,7 @@ export default class Game1Scene {
     this.isActive = false;
     this.isPaused = false;
     this.gameTimer = null;
+    this.inactivityTimer = null;
     this.pauseListener = null;
     this.resumeListener = null;
     
@@ -37,6 +38,9 @@ export default class Game1Scene {
     
     // Event listeners
     this.playerActiveListener = null;
+    this.playerInactiveListener = null;
+    this.playerJoinListener = null;
+    this.playerLeaveListener = null;
   }
 
   init() {
@@ -167,6 +171,20 @@ export default class Game1Scene {
     
     this.playerActiveListener = (data) => this.handlePlateActivation(data.playerId);
     gameEvents.on(Events.PLAYER_ACTIVE, this.playerActiveListener);
+    
+    this.playerInactiveListener = () => {
+      if (this.isAcceptingInput) this.startInactivityTimer();
+    };
+    this.playerJoinListener = () => {
+      if (this.isAcceptingInput) this.startInactivityTimer();
+    };
+    this.playerLeaveListener = () => {
+      if (this.isAcceptingInput) this.startInactivityTimer();
+    };
+    
+    gameEvents.on(Events.PLAYER_INACTIVE, this.playerInactiveListener);
+    gameEvents.on(Events.PLAYER_JOIN, this.playerJoinListener);
+    gameEvents.on(Events.PLAYER_LEAVE, this.playerLeaveListener);
     
     // run game logic
     this.startGameLogic();
@@ -314,12 +332,15 @@ export default class Game1Scene {
     this.isShowingSequence = false;
     this.isAcceptingInput = true;
     this.playerInput = [];
+    this.startInactivityTimer();
   }
 
   async activatePlayerBlock(playerId) {
     const block = this.playerBlocks.find(b => parseInt(b.dataset.playerId) === playerId);
     if (block) {
       block.classList.add('active');
+      // Play the player's sound when showing the sequence
+      this.playerManager.playPlayerSound(playerId);
       await this.delay(600);
       block.classList.remove('active');
     }
@@ -332,10 +353,27 @@ export default class Game1Scene {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  startInactivityTimer() {
+    this.clearInactivityTimer();
+    this.inactivityTimer = setTimeout(() => {
+      console.log('[Game1Scene] Inactivity timeout - resetting to idle');
+      gameEvents.emit(Events.RESET_TO_IDLE);
+    }, 15000); // 15 seconds
+  }
+
+  clearInactivityTimer() {
+    if (this.inactivityTimer) {
+      clearTimeout(this.inactivityTimer);
+      this.inactivityTimer = null;
+    }
+  }
+
   handlePlateActivation(playerId) {
     if (!this.isAcceptingInput || this.isPaused || !this.isActive) return;
     
     if (playerId < 1 || playerId > 4) return;
+    
+    this.startInactivityTimer();
     
     console.log(`[Game1Scene] Player ${playerId} stepped on plate`);
     
@@ -362,6 +400,7 @@ export default class Game1Scene {
 
   handleWrongInput() {
     this.isAcceptingInput = false;
+    this.clearInactivityTimer();
     this.failCount++;
     this.playHeartAnimation(this.failCount - 1);
     this.playErrorSound();
@@ -376,8 +415,7 @@ export default class Game1Scene {
       this.playerBlocks.forEach(block => block.classList.remove('error'));
       this.hidePlayerBlocks();
       
-      // Check if we've played enough sequences
-      if (this.currentSequenceNumber >= this.totalSequences) {
+      if (this.failCount >= this.maxFails || this.currentSequenceNumber >= this.totalSequences) {
         setTimeout(() => {
           this.voiceoverManager.play('_GAME1_FAIL');
           this.onGameComplete();
@@ -399,6 +437,7 @@ export default class Game1Scene {
 
   handleSequenceComplete() {
     this.isAcceptingInput = false;
+    this.clearInactivityTimer();
     this.playSuccessSound();
     this.triggerSuccessFlash();
 
@@ -407,7 +446,6 @@ export default class Game1Scene {
     setTimeout(() => {
       this.hidePlayerBlocks();
       
-      // Check if we've played enough sequences
       if (this.currentSequenceNumber >= this.totalSequences) {
         setTimeout(() => {
           this.voiceoverManager.play('_GAME1_PASS', {
@@ -464,6 +502,8 @@ export default class Game1Scene {
       this.gameTimer = null;
     }
     
+    this.clearInactivityTimer();
+    
     if (this.pauseListener) {
       gameEvents.off(Events.GAME_PAUSE, this.pauseListener);
       this.pauseListener = null;
@@ -477,6 +517,21 @@ export default class Game1Scene {
     if (this.playerActiveListener) {
       gameEvents.off(Events.PLAYER_ACTIVE, this.playerActiveListener);
       this.playerActiveListener = null;
+    }
+    
+    if (this.playerInactiveListener) {
+      gameEvents.off(Events.PLAYER_INACTIVE, this.playerInactiveListener);
+      this.playerInactiveListener = null;
+    }
+    
+    if (this.playerJoinListener) {
+      gameEvents.off(Events.PLAYER_JOIN, this.playerJoinListener);
+      this.playerJoinListener = null;
+    }
+    
+    if (this.playerLeaveListener) {
+      gameEvents.off(Events.PLAYER_LEAVE, this.playerLeaveListener);
+      this.playerLeaveListener = null;
     }
     
     this.container.classList.add('hidden');

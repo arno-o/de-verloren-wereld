@@ -45,7 +45,7 @@ export default class GameStateManager {
     for (let i = 1; i <= mockPlayerCount; i++) {
       const player = this.playerManager.getPlayer(i);
       player.isActive = true;
-      player.isOnPlate = true;
+      player.isOnPlate = DEV_MODE.START_SCENE !== 'player-check';
       player.joinedAt = Date.now();
       this.playerManager.initialPlayers.add(i);
     }
@@ -141,7 +141,7 @@ export default class GameStateManager {
         this.startGame1();
         break;
       case 'player-check':
-        this.startPlayerCheck();
+        this.startPlayerCheck(1);
         break;
       case 'game2':
         this.startGame2();

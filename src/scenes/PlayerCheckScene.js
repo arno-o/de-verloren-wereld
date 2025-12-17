@@ -12,8 +12,11 @@ export default class PlayerCheckScene {
     this.gracePeriodTimer = null;
     this.inGracePeriod = false;
     this.avatars = [];
-    this.avatarStates = []; // Track current state of each avatar
+    this.avatarStates = [];
     this.voiceoverManager = voiceoverManager;
+    this.playerJoinListener = null;
+    this.hasPlayedSinglePlayerWarning = false;
+    this.belowMinimumSince = null;
   }
 
   init() {
@@ -89,14 +92,19 @@ export default class PlayerCheckScene {
     
     this.activeListener = () => this.updatePlayerStatus();
     this.inactiveListener = () => this.updatePlayerStatus();
+    this.playerJoinListener = (data) => {
+      this.playerManager.initialPlayers.add(data.playerId);
+      this.updatePlayerStatus();
+    };
+    
     gameEvents.on(Events.PLAYER_ACTIVE, this.activeListener);
     gameEvents.on(Events.PLAYER_INACTIVE, this.inactiveListener);
+    gameEvents.on(Events.PLAYER_JOIN, this.playerJoinListener);
     
     this.startCheckingPlayers();
   }
 
   updatePlayerStatus() {
-    const initialPlayerIds = Array.from(this.playerManager.initialPlayers);
     const players = this.playerManager.getActivePlayers();
     
     for (let i = 1; i <= PlayerConfig.MAX_PLAYERS; i++) {
@@ -105,10 +113,9 @@ export default class PlayerCheckScene {
       const avatarIndex = i - 1;
       const animation = this.avatars[avatarIndex];
       const currentState = this.avatarStates[avatarIndex];
-      const isInitialPlayer = initialPlayerIds.includes(i);
       const player = players.find(p => p.id === i);
       
-      if (!isInitialPlayer || !player) {
+      if (!player) {
         // not an initial player - show as empty
         slot.style.opacity = '0.3';
         avatar.classList.add('empty');
@@ -163,30 +170,47 @@ export default class PlayerCheckScene {
     const checkPlayers = () => {
       if (!this.isActive) return;
       
-      const initialPlayers = this.playerManager.getInitialPlayers().filter(p => p.isActive);
-      const initialPlayersCount = initialPlayers.length;
+      const activePlayers = this.playerManager.getActivePlayers();
+      const activePlayersCount = activePlayers.length;
+      
+      if (activePlayersCount === 1 && !this.hasPlayedSinglePlayerWarning) {
+        this.voiceoverManager.play('_SELECT_MIN');
+        this.hasPlayedSinglePlayerWarning = true;
+      }
+      
+      if (activePlayersCount > 1) {
+        this.hasPlayedSinglePlayerWarning = false;
+      }
       
       // check if we have minimum players
-      if (initialPlayersCount < 2) {
-        if (!this.inGracePeriod) {
-          console.log('[PlayerCheckScene] Below minimum players, starting grace period');
+      if (activePlayersCount < 2) {
+        if (!this.belowMinimumSince) {
+          this.belowMinimumSince = Date.now();
+          console.log('[PlayerCheckScene] Below minimum players, starting debounce period');
+        }
+        
+        const timeBelowMinimum = Date.now() - this.belowMinimumSince;
+        if (timeBelowMinimum >= 3000 && !this.inGracePeriod) {
+          console.log('[PlayerCheckScene] Still below minimum after 3s, starting grace period');
           this.inGracePeriod = true;
           this.updateMessage('Wachten op meer spelers...');
           
           this.gracePeriodTimer = setTimeout(() => {
-            // still below minimum? Reset to idle
-            const stillBelowMin = this.playerManager.getInitialPlayers().filter(p => p.isActive).length < 2;
+            const stillBelowMin = this.playerManager.getActivePlayerCount() < 2;
             if (stillBelowMin) {
               console.log('[PlayerCheckScene] Grace period expired, resetting to idle');
               gameEvents.emit(Events.RESET_TO_IDLE);
             }
           }, 10000); // 10 second grace period
         }
+        
         this.checkTimer = setTimeout(checkPlayers, checkInterval);
         return;
       }
       
-      // we have enough players, cancel grace period if active
+      // we have enough players, cancel grace period and reset debounce
+      this.belowMinimumSince = null;
+      
       if (this.inGracePeriod) {
         console.log('[PlayerCheckScene] Minimum players restored');
         this.inGracePeriod = false;
@@ -197,8 +221,8 @@ export default class PlayerCheckScene {
         this.updateMessage('Ga op je veld staan om door te gaan...');
       }
       
-      // check if all initial active players are on plate
-      const allOnPlate = initialPlayers.every(p => p.isOnPlate);
+      // check if all active players are on plate
+      const allOnPlate = activePlayers.every(p => p.isOnPlate);
       
       if (allOnPlate) {
         console.log('[PlayerCheckScene] All initial players ready!');
@@ -240,6 +264,8 @@ export default class PlayerCheckScene {
     console.log('[PlayerCheckScene] Cleaning up...');
     this.isActive = false;
     this.inGracePeriod = false;
+    this.hasPlayedSinglePlayerWarning = false;
+    this.belowMinimumSince = null;
     
     if (this.checkTimer) {
       clearTimeout(this.checkTimer);
@@ -265,6 +291,11 @@ export default class PlayerCheckScene {
     if (this.inactiveListener) {
       gameEvents.off(Events.PLAYER_INACTIVE, this.inactiveListener);
       this.inactiveListener = null;
+    }
+    
+    if (this.playerJoinListener) {
+      gameEvents.off(Events.PLAYER_JOIN, this.playerJoinListener);
+      this.playerJoinListener = null;
     }
     
     this.container.classList.add('hidden');
