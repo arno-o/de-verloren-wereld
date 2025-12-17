@@ -3,7 +3,7 @@ import { gameEvents, Events } from '../utils/events.js';
 import Lottie from 'lottie-web';
 
 export default class PlayerSelectScene {
-  constructor(container, playerManager) {
+  constructor(container, playerManager, voiceoverManager) {
     this.container = container;
     this.playerManager = playerManager;
     this.isActive = false;
@@ -13,6 +13,9 @@ export default class PlayerSelectScene {
     this.playerLeaveListener = null;
     this.playerInactiveListener = null;
     this.remainingTime = 0;
+    this.voiceoverManager = voiceoverManager;
+    this.singlePlayerTimer = null;
+    this.hasPlayedMinWarning = false;
 
     // cached DOM elements
     this.countdownMessage = null;
@@ -164,11 +167,27 @@ export default class PlayerSelectScene {
 
     if (activeCount < PlayerConfig.MIN_PLAYERS) {
       this.stopCountdown();
+
+      if (activeCount === 1 && !this.singlePlayerTimer && !this.hasPlayedMinWarning) {
+        this.singlePlayerTimer = setTimeout(() => {
+          if (this.isActive && this.playerManager.getActivePlayerCount() === 1) {
+            this.voiceoverManager.play('_SELECT_MIN');
+            this.hasPlayedMinWarning = true;
+          }
+        }, 3000);
+      }
+
       this.remainingTime = SceneConfig.PLAYER_SELECT_WAIT / 1000;
       if (this.timerElement) this.timerElement.textContent = this.remainingTime;
       this.countdownMessage?.classList.add('hidden');
       this.minPlayersMessage?.classList.remove('hidden');
     } else {
+      if (this.singlePlayerTimer) {
+        clearTimeout(this.singlePlayerTimer);
+        this.singlePlayerTimer = null;
+        this.hasPlayedMinWarning = false;
+      }
+
       if (!this.isCountdownRunning) {
         this.startCountdown();
       }
@@ -247,6 +266,13 @@ export default class PlayerSelectScene {
     this.isActive = false;
 
     this.stopCountdown();
+
+    // Clear single player timer if it exists
+    if (this.singlePlayerTimer) {
+      clearTimeout(this.singlePlayerTimer);
+      this.singlePlayerTimer = null;
+      this.hasPlayedMinWarning = false;
+    }
 
     if (this.clockTickAudio) {
       this.clockTickAudio.pause();

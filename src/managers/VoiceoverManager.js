@@ -7,12 +7,22 @@ export default class VoiceoverManager {
     }
 
     static VOICELINES = {
-        MEMORY_INTRO: 'assets/audio/voiceovers/_MEMORY_INTRO.m4a',
-        MEMORY_SUCCESS: 'assets/audio/voiceovers/_MEMORY_SUCCESS.m4a',
-        MEMORY_FAIL: 'assets/audio/voiceovers/_MEMORY_FAIL.m4a',
-
-        TETRIS_INTRO: 'assets/audio/voiceovers/_TETRIS_INTRO.m4a',
-        TETRIS_SUCCESS: 'assets/audio/voiceovers/_TETRIS_SUCCESS.m4a',
+        _SELECT_1: '_SELECT_1.m4a',                     // ✅
+        _SELECT_MIN: '_SELECT_MIN.m4a',                 // ✅
+        _PROCESS_1: '_PROCESS_1.m4a',                   // ✅
+        _INTRO1_1: '_INTRO1_1.m4a',                     // ✅
+        _INTRO1_2: '_INTRO1_2.m4a',                     // ✅
+        _GAME1_START: '_GAME1_START.m4a',               // ✅
+        _GAME1_PARTIAL_FAIL: '_GAME1_PARTIAL_FAIL.m4a', // ✅
+        _GAME1_PARTIAL_PASS: '_GAME1_PARTIAL_PASS.m4a', // ✅
+        _GAME1_FAIL: '_GAME1_FAIL.m4a',                 // ✅
+        _GAME1_PASS: '_GAME1_PASS.m4a',                 // ✅
+        _CHECK: '_CHECK.m4a',                           // ✅
+        _INTRO2_1: '_INTRO2_1.m4a',                     // ✅
+        _INTRO2_2: '_INTRO2_2.m4a',                     // ✅
+        _GAME2_FAIL: '_GAME2_FAIL.m4a',                 // ✅
+        _GAME2_PASS: '_GAME2_PASS.m4a',                 // ✅
+        _OUTRO: '_OUTRO.m4a'                            // 
     };
 
     init() {
@@ -26,9 +36,10 @@ export default class VoiceoverManager {
             onComplete = null
         } = options;
 
-        const path = VoiceoverManager.VOICELINES[voicelineKey];
+        const path = `assets/audio/voiceovers/${VoiceoverManager.VOICELINES[voicelineKey]}`;
+
         if (!path) {
-            console.error(`[VoiceoverManager] Voiceline "${voicelineKey}" not found`);
+            console.warn(`[VoiceoverManager] Voiceline "${voicelineKey}" not found`);
             return Promise.reject(new Error(`Voiceline "${voicelineKey}" not found`));
         }
 

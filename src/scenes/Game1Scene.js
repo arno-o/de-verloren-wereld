@@ -4,7 +4,7 @@ import { AvatarBackgrounds } from '../utils/constants.js';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class Game1Scene {
-  constructor(container, playerManager) {
+  constructor(container, playerManager, voiceoverManager) {
     this.container = container;
     this.playerManager = playerManager;
     this.isActive = false;
@@ -33,6 +33,7 @@ export default class Game1Scene {
     this.audioContext = null;
     this.errorSoundBuffer = null;
     this.successSoundBuffer = null;
+    this.voiceoverManager = voiceoverManager;
     
     // Event listeners
     this.playerActiveListener = null;
@@ -118,6 +119,7 @@ export default class Game1Scene {
       console.error('[Game1Scene] Failed to play success sound:', error);
     }
   }
+
   triggerSuccessFlash() {
     const successOverlay = this.container.querySelector('.success-flash-overlay');
     if (successOverlay) {
@@ -127,6 +129,7 @@ export default class Game1Scene {
       }, 600);
     }
   }
+
   triggerErrorFlash() {
     const overlay = this.container.querySelector('.error-flash-overlay');
     if (!overlay) return;
@@ -218,6 +221,7 @@ export default class Game1Scene {
   startGameLogic() {
     this.failCount = 0;
     this.currentSequenceNumber = 0;
+    this.voiceoverManager.play('_GAME1_START');
     this.startCountdown("Onthoud de volgorde!", true);
     this.updateRoundDisplay();
   }
@@ -363,6 +367,8 @@ export default class Game1Scene {
     this.playErrorSound();
     this.triggerErrorFlash();
     this.updateRoundDisplay();
+
+    this.voiceoverManager.play('_GAME1_PARTIAL_FAIL');
     
     this.playerBlocks.forEach(block => block.classList.add('error'));
     
@@ -373,6 +379,7 @@ export default class Game1Scene {
       // Check if we've played enough sequences
       if (this.currentSequenceNumber >= this.totalSequences) {
         setTimeout(() => {
+          this.voiceoverManager.play('_GAME1_FAIL');
           this.onGameComplete();
         }, 1500);
       } else {
@@ -394,6 +401,8 @@ export default class Game1Scene {
     this.isAcceptingInput = false;
     this.playSuccessSound();
     this.triggerSuccessFlash();
+
+    this.voiceoverManager.play('_GAME1_PARTIAL_PASS');
     
     setTimeout(() => {
       this.hidePlayerBlocks();
@@ -401,7 +410,11 @@ export default class Game1Scene {
       // Check if we've played enough sequences
       if (this.currentSequenceNumber >= this.totalSequences) {
         setTimeout(() => {
-          this.onGameComplete();
+          this.voiceoverManager.play('_GAME1_PASS', {
+            onComplete: () => {
+              this.onGameComplete();
+            }
+          });
         }, 1500);
       } else {
         setTimeout(() => {

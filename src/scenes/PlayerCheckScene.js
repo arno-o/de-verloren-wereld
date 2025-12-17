@@ -3,7 +3,7 @@ import { gameEvents, Events } from '../utils/events.js';
 import Lottie from 'lottie-web';
 
 export default class PlayerCheckScene {
-  constructor(container, playerManager) {
+  constructor(container, playerManager, voiceoverManager) {
     this.container = container;
     this.playerManager = playerManager;
     this.isActive = false;
@@ -13,6 +13,7 @@ export default class PlayerCheckScene {
     this.inGracePeriod = false;
     this.avatars = [];
     this.avatarStates = []; // Track current state of each avatar
+    this.voiceoverManager = voiceoverManager;
   }
 
   init() {
@@ -81,6 +82,8 @@ export default class PlayerCheckScene {
     this.isActive = true;
     this.checkNumber = options.checkNumber || 1;
     this.container.classList.remove('hidden');
+
+    this.voiceoverManager.play('_CHECK');
     
     this.updatePlayerStatus();
     

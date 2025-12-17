@@ -2,10 +2,11 @@ import gsap from 'gsap';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class OutroScene {
-  constructor(container, playerManager) {
+  constructor(container, playerManager, voiceoverManager) {
+    this.isActive = false;
     this.container = container;
     this.playerManager = playerManager;
-    this.isActive = false;
+    this.voiceoverManager = voiceoverManager;
   }
 
   init() {
@@ -36,6 +37,8 @@ export default class OutroScene {
     // Update progress bar to 100%
     let progress = document.querySelector("#progress-bar-over");
     gsap.to(progress, { width: "100%", duration: 0.5, ease: "power2.out" });
+
+    this.voiceoverManager.play('_OUTRO');
   }
 
   cleanup() {

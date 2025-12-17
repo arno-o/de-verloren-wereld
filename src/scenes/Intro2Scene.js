@@ -3,16 +3,16 @@ import Lottie from 'lottie-web';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class Intro2Scene {
-  constructor(container, playerManager, backgroundManager) {
+  constructor(container, playerManager, backgroundManager, voiceoverManager) {
     this.isActive = false;
     this.introTimer = null;
     this.container = container;
     
-    this.backgroundManager = backgroundManager;
     this.playerManager = playerManager;
+    this.voiceoverManager = voiceoverManager;
+    this.backgroundManager = backgroundManager;
 
     this.animation = null;
-    this.audio = null;
     this.backgroundMusic = null;
     this.hasTriggeredTransition = false;
     this.video = null;
@@ -37,12 +37,13 @@ export default class Intro2Scene {
         </div>
       </div>
     `;
-    
-    // Load audio
-    this.audio = new Audio('assets/audio/voiceovers/_MEMORY_SUCCESS.m4a');
-    
+        
     // Load background music
     this.backgroundMusic = new Audio('assets/audio/music/background-bring-sound-back.mp3');
+    this.backgroundMusic.volume = 0.05;
+    this.backgroundMusic.addEventListener('loadeddata', () => {
+      this.backgroundMusic.volume = 0.05;
+    });
   }
   
   loadAnimation() {
@@ -68,7 +69,6 @@ export default class Intro2Scene {
     
     // Start background music
     this.backgroundMusic.play().catch(err => console.error('[Intro2Scene] Background music playback error:', err));
-    this.backgroundMusic.volume = 0.20;
     
     // Load animation and get video reference
     this.loadAnimation();
@@ -80,11 +80,9 @@ export default class Intro2Scene {
 
   playDemo() {
     console.log('[Intro2Scene] Starting demo...');
-    
-    // Start audio
-    this.audio.play().catch(err => console.error('[Intro2Scene] Audio playback error:', err));
-    
+        
     this.animation.addEventListener('DOMLoaded', () => {
+      this.voiceoverManager.play('_INTRO2_1');
       this.animation.playSegments([250, 450], true);
     })
 
@@ -106,6 +104,8 @@ export default class Intro2Scene {
     // Fade out animation
     animationContainer.style.transition = 'opacity 0.5s';
     animationContainer.style.opacity = '0';
+
+    this.voiceoverManager.play('_INTRO2_2');
     
     setTimeout(() => {
       animationContainer.style.display = 'none';
@@ -150,11 +150,6 @@ export default class Intro2Scene {
     if (this.introTimer) {
       clearTimeout(this.introTimer);
       this.introTimer = null;
-    }
-
-    if (this.audio) {
-      this.audio.pause();
-      this.audio.currentTime = 0;
     }
 
     if (this.video) {

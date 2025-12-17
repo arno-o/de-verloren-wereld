@@ -67,6 +67,11 @@ export default class IntroScene {
     
     this.animation.addEventListener('DOMLoaded', () => {
       this.animation.playSegments([0, 250], true);
+      this.voiceoverManager.play('_PROCESS_1', {
+        onComplete: () => {
+          this.voiceoverManager.play('_INTRO1_1');
+        }
+      });
     })
     
     // lListen for animation complete
@@ -86,11 +91,7 @@ export default class IntroScene {
     animationContainer.style.transition = 'opacity 0.5s';
     animationContainer.style.opacity = '0';
 
-    this.voiceoverManager.play('MEMORY_INTRO', {
-      onComplete: () => {
-        // do something
-      }
-    });
+    this.voiceoverManager.play('_INTRO1_2');
     
     setTimeout(() => {
       animationContainer.style.display = 'none';

@@ -3,7 +3,7 @@ import Lottie from 'lottie-web';
 import { gameEvents, Events } from '../utils/events.js';
 
 export default class Game2Scene {
-  constructor(container, playerManager) {
+  constructor(container, playerManager, voiceoverManager) {
     this.container = container;
     this.playerManager = playerManager;
     this.isActive = false;
@@ -16,6 +16,7 @@ export default class Game2Scene {
     // game state
     this.remainingLives = 3;
     this.totalBlocksCleared = 0;
+    this.totalBlocksSpawned = 0;
     this.blocksNeededToClear = 25;
     this.animationFrame = null;
     this.lastFrameTime = 0;
@@ -30,6 +31,7 @@ export default class Game2Scene {
     // Audio
     this.audioContext = null;
     this.errorSoundBuffer = null;
+    this.voiceoverManager = voiceoverManager;
   }
 
   init() {
@@ -184,6 +186,7 @@ export default class Game2Scene {
   initializeGameState() {
     this.remainingLives = 3;
     this.totalBlocksCleared = 0;
+    this.totalBlocksSpawned = 0;
     this.currentlyFallingBlocks = [];
     this.lastSpawnedBlockColorId = null;
     
@@ -244,6 +247,7 @@ export default class Game2Scene {
 
   createAndSpawnFallingBlock(blockColorId) {
     this.lastSpawnedBlockColorId = blockColorId;
+    this.totalBlocksSpawned++;
     
     const blocksContainer = this.container.querySelector('#blocks-container');
     const blockElement = document.createElement('div');
@@ -272,17 +276,17 @@ export default class Game2Scene {
   }
 
   scheduleNextBlockSpawn() {
-    // Don't spawn more blocks if we've already cleared enough
-    if (this.totalBlocksCleared >= this.blocksNeededToClear) {
+    // Don't spawn more blocks if we've already spawned enough
+    if (this.totalBlocksSpawned >= this.blocksNeededToClear) {
       return;
     }
 
     const baseSpawnDelay = 2500;
-    const minimumSpawnDelay = 800;
+    const minimumSpawnDelay = 1200;
     const gameProgress = this.totalBlocksCleared / this.blocksNeededToClear;
-    const currentSpawnDelay = Math.max(minimumSpawnDelay, baseSpawnDelay - (gameProgress * 1700));
+    const currentSpawnDelay = Math.max(minimumSpawnDelay, baseSpawnDelay - (gameProgress * 1300));
     
-    const shouldSpawnDoubleBlock = this.totalBlocksCleared >= 15 && Math.random() > 0.6;
+    const shouldSpawnDoubleBlock = this.totalBlocksCleared >= 18 && this.totalBlocksCleared < 23 && Math.random() > 0.7;
     
     // Keep the queue filled
     while (this.upcomingBlockColorQueue.length < 5) {
@@ -322,7 +326,7 @@ export default class Game2Scene {
     let speedIncrease = 0;
     
     if (this.totalBlocksCleared > 15) {
-      speedIncrease = 80 + ((this.totalBlocksCleared - 15) * 10);
+      speedIncrease = 45 + ((this.totalBlocksCleared - 15) * 3);
     } else {
       speedIncrease = this.totalBlocksCleared * 3;
     }
@@ -431,8 +435,6 @@ export default class Game2Scene {
   }
 
   handleGameOver() {
-    console.log('[Game2Scene] game over');
-    
     // remove all falling blocks from screen
     this.currentlyFallingBlocks.forEach(block => {
       if (block.element.parentNode) {
@@ -450,7 +452,11 @@ export default class Game2Scene {
     const gameArea = this.container.querySelector('.game2-container');
     gameArea.innerHTML = '<div class="game-over-message"><h3>Helaas!</h3></div>';
     
-    this.handleGameComplete();
+    this.voiceoverManager.play('_GAME2_FAIL', {
+      onComplete: () => {
+        this.handleGameComplete(true);
+      }
+    })
   }
 
   handleGamePause() {
@@ -466,11 +472,22 @@ export default class Game2Scene {
     this.lastFrameTime = performance.now();
   }
 
-  handleGameComplete() {
+  handleGameComplete(fail = false) {
     if (this.isActive) {
       this.isActive = false;
       console.log('Game 2 ended');
-      gameEvents.emit(Events.SCENE_COMPLETE, { scene: 'game2' });
+
+      if (fail) {
+        // Fail voiceover already played in handleGameOver, just complete the scene
+        gameEvents.emit(Events.SCENE_COMPLETE, { scene: 'game2' });
+      } else {
+        // Play success voiceover, then complete the scene
+        this.voiceoverManager.play('_GAME2_PASS', {
+          onComplete: () => {
+            gameEvents.emit(Events.SCENE_COMPLETE, { scene: 'game2' });
+          }
+        });
+      }
 
       gsap.to(document.documentElement, {
         "--saturation": "0%",
