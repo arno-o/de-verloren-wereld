@@ -1,6 +1,6 @@
 {
   "name": "de-verloren-wereld",
-  "version": "0.0.9-alpha",
+  "version": "1.0",
   "description": "Een interactieve installatie voor het JEF evenement in Antwerpen, 2025. Gemaakt door Deviners",
   "type": "module",
   "scripts": {
